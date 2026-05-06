@@ -53,12 +53,12 @@ export function ChatSidebar({ agent, onClose, onAssignTask, messages, isLoading 
             <div className="p-6 flex flex-col flex-1 items-center gap-4">
                <div className="w-32 h-32 bg-black border border-white/10 shrink-0 overflow-hidden relative shadow-lg">
                   <div 
+                    className="w-full h-full"
                     style={{
-                      width: '100%',
-                      height: '100%',
                       backgroundImage: `url(/char_${agent.spriteIndex}.png)`,
-                      backgroundPosition: '0% 0%',
+                      backgroundPosition: '16.66% 0%',
                       backgroundSize: '700% 300%',
+                      backgroundRepeat: 'no-repeat',
                       imageRendering: 'pixelated'
                     }} 
                   />

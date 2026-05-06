@@ -1,11 +1,13 @@
 import { NextResponse } from 'next/server';
 import { GoogleGenAI } from '@google/genai';
 
-const apiKey = process.env.GEMINI_API_KEY || process.env.NEXT_PUBLIC_GEMINI_API_KEY || "AQ.Ab8RN6Ld69EHuF_8oM1zqQUxcBJ_XxW1xi5gJMorLkU8QCULiQ";
-const ai = new GoogleGenAI({ apiKey: apiKey });
+export const dynamic = 'force-dynamic';
 
 export async function POST(req: Request) {
   try {
+    const apiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY;
+    const ai = new GoogleGenAI({ apiKey });
+    
     const { task, agentName } = await req.json();
 
     if (!task) {

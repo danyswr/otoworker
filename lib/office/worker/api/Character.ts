@@ -61,6 +61,16 @@ export class Character {
         
         let dx = target.x - this.x;
         let dy = target.y - this.y;
+        
+        // Strictly orthogonal movement to prevent diagonal wall clipping
+        if (Math.abs(dx) > 0.01 && Math.abs(dy) > 0.01) {
+          if (Math.abs(dx) > Math.abs(dy)) {
+            dy = 0;
+          } else {
+            dx = 0;
+          }
+        }
+        
         const dist = Math.sqrt(dx * dx + dy * dy);
         
         if (Math.abs(dx) > Math.abs(dy)) {
@@ -69,8 +79,8 @@ export class Character {
           this.direction = dy > 0 ? 0 : 3; // Down : Up
         }
 
-        // If close enough, snap to target and pop
-        if (dist < 0.1) {
+        // If close enough, snap along the axis that was moved
+        if (dist < 0.1 && (target.x === this.x || target.y === this.y || Math.abs(target.x - this.x) + Math.abs(target.y - this.y) < 0.2)) {
           this.x = target.x;
           this.y = target.y;
           this.path.shift();
@@ -96,7 +106,7 @@ export class Character {
     }
   }
 
-  draw(renderer: Renderer, tileSize: number, isSelected: boolean) {
+  draw(renderer: Renderer, tileSize: number, isSelected: boolean, isDragged: boolean = false) {
     // Top-left draw offset
     const px = this.x * tileSize;
     const py = this.y * tileSize; // Removed -0.2 offset to sit exactly on the tile foot
@@ -136,12 +146,31 @@ export class Character {
       const sy = row * fh;
 
       // Make character slightly taller than a tile and overlap
-      const drawWidth = charSize * 0.9; // Adjusted size
-      const drawHeight = drawWidth * (fh / fw);
+      let drawWidth = charSize * 0.9; // Adjusted size
+      let drawHeight = drawWidth * (fh / fw);
       
       // The visual foot of the character should align with the bottom of the current tile.
-      const dx = px - (drawWidth - charSize)/2;
-      const dy = py - (drawHeight - charSize) - charSize * 0.2; // Shift purely visual drawing up slightly
+      let dx = px - (drawWidth - charSize)/2;
+      let dy = py - (drawHeight - charSize) - charSize * 0.2; // Shift purely visual drawing up slightly
+      
+      if (isDragged) {
+        // Visual lift effect!
+        drawWidth *= 1.3;
+        drawHeight *= 1.3;
+        dx = px - (drawWidth - charSize)/2;
+        dy -= 20; // Lift up in the air
+        
+        // Shadow effect
+        renderer.ctx.fillStyle = "rgba(0,0,0,0.3)";
+        renderer.ctx.beginPath();
+        renderer.ctx.ellipse(px + charSize/2, py + charSize/2, charSize * 0.4, charSize * 0.2, 0, 0, Math.PI * 2);
+        renderer.ctx.fill();
+        
+        // Face down and wiggle legs
+        row = 0;
+        flip = false;
+        col = (Date.now() % 400 > 200) ? 0 : 2; // Wiggle!
+      }
       
       if (isSelected) {
         renderer.drawOutline(dx - 1, dy - 1, drawWidth + 2, drawHeight + 2, "rgba(255, 255, 255, 0.8)", 2);

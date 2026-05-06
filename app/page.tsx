@@ -33,11 +33,25 @@ const RAW_MAP = [
 const MAX_COLS = Math.max(...RAW_MAP.map(r => r.length));
 
 function createGrid() {
-  return RAW_MAP.map(row => {
+  const grid = RAW_MAP.map(row => {
     const newRow = [...row];
     while(newRow.length < MAX_COLS) newRow.push(1);
     return newRow;
   });
+  
+  // Bake desks as unwalkable so agents don't randomly wander into them
+  const defaultDesks = [
+    { x: 9, y: 10 }, { x: 9, y: 13 }, { x: 11, y: 10 }, { x: 11, y: 13 },
+    { x: 13, y: 10 }, { x: 13, y: 13 }, { x: 15, y: 10 }, { x: 15, y: 13 },
+    { x: 17, y: 10 }, { x: 17, y: 13 }, { x: 19, y: 10 }, { x: 19, y: 13 },
+  ];
+  for (const desk of defaultDesks) {
+    if (grid[desk.y] && grid[desk.y][desk.x] !== undefined) {
+      grid[desk.y][desk.x] = 1;
+    }
+  }
+  
+  return grid;
 }
 
 export default function Page() {
@@ -61,17 +75,17 @@ export default function Page() {
     serverRoomPoint: { x: 3, y: 3 },
     meetingTableRoomPoint: { x: 10, y: 4 },
     desks: [
-      { x: 8, y: 10 }, { x: 8, y: 13 }, { x: 10, y: 10 }, { x: 10, y: 13 },
-      { x: 12, y: 10 }, { x: 12, y: 13 }, { x: 14, y: 10 }, { x: 14, y: 13 },
-      { x: 16, y: 10 }, { x: 16, y: 13 }, { x: 18, y: 10 }, { x: 18, y: 13 },
+      { x: 9, y: 10 }, { x: 9, y: 13 }, { x: 11, y: 10 }, { x: 11, y: 13 },
+      { x: 13, y: 10 }, { x: 13, y: 13 }, { x: 15, y: 10 }, { x: 15, y: 13 },
+      { x: 17, y: 10 }, { x: 17, y: 13 }, { x: 19, y: 10 }, { x: 19, y: 13 },
     ]
   });
 
   // Initial characters
   useEffect(() => {
     const chars = [
-      new Character("c1", "Alice", 8, 10, "#EF4444", 0),
-      new Character("c2", "Bob", 10, 10, "#3B82F6", 1),
+      new Character("c1", "Alice", 9, 11, "#EF4444", 0),
+      new Character("c2", "Bob", 11, 11, "#3B82F6", 1),
     ];
     gameStateRef.current.characters = chars;
     setCharacterList([...chars]);
@@ -121,9 +135,15 @@ export default function Page() {
 
   useEffect(() => {
     const handleFire = () => handleFireWorker();
+    const handleGeneralTask = (e: any) => {
+      const { task, agentId } = e.detail;
+      assignTaskToAgent(agentId, task);
+    };
     window.addEventListener('fireWorker', handleFire);
+    window.addEventListener('assignGeneralTask', handleGeneralTask);
     return () => {
       window.removeEventListener('fireWorker', handleFire);
+      window.removeEventListener('assignGeneralTask', handleGeneralTask);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedAgentId]);
@@ -135,12 +155,16 @@ export default function Page() {
     }));
     
     const agent = gameStateRef.current.characters.find(c => c.id === agentId);
-    if (!agent) return;
+    if (!agent) return null;
 
     setLoadingMap(prev => ({ ...prev, [agentId]: true }));
     
     // Find assigned desk mapping from gameStateRef proximity or find a new free one
-    const occupiedDesks = new Set(gameStateRef.current.characters.filter(c => c.id !== agent.id).map(c => `${Math.floor(c.x)},${Math.floor(c.y)}`));
+    const occupiedDesks = new Set(
+      gameStateRef.current.characters
+        .filter(c => c.id !== agent.id)
+        .map(c => `${Math.floor(c.x)},${Math.floor(c.y) - 1}`)
+    );
     
     let assignedDesk = gameStateRef.current.desks.find(d => 
        Math.abs(d.x - agent.x) < 2 && Math.abs(d.y - agent.y) < 2
@@ -153,8 +177,8 @@ export default function Page() {
 
     const runTask = async () => {
       // Correct worker rotation at desk
-      agent.y = originalDesk.y;
-      agent.direction = 0; // face down at desk
+      agent.y = originalDesk.y + 1;
+      agent.direction = 3; // face up
       agent.state = CharacterState.WORK;
       
       try {
@@ -170,33 +194,43 @@ export default function Page() {
           ...prev,
           [agent.id]: [...(prev[agent.id] || []), { role: 'agent', content: responseText }]
         }));
+        setLoadingMap(prev => ({ ...prev, [agent.id]: false }));
+        
+        agent.state = CharacterState.IDLE;
+        
+        return data;
       } catch (e: any) {
         setChats(prev => ({
           ...prev,
           [agent.id]: [...(prev[agent.id] || []), { role: 'agent', content: `Error: ${e.message}` }]
         }));
-      } finally {
         setLoadingMap(prev => ({ ...prev, [agent.id]: false }));
+        
         agent.state = CharacterState.IDLE;
+        
+        return { result: `Error: ${e.message}` };
       }
     };
 
-    // Send the agent to their desk to work
-    const targetDesk = { x: originalDesk.x, y: originalDesk.y };
+    // Send the agent to their desk to work (stand in front of it, facing up)
+    const targetDesk = { x: originalDesk.x, y: originalDesk.y + 1 };
     
     // Check if agent is already at the desk working spot
-    if (Math.abs(agent.x - targetDesk.x) < 0.1 && Math.abs(agent.y - targetDesk.y) < 0.1) {
-       runTask();
-    } else {
-       const p = Pathfinding.findPath(gameStateRef.current.grid, { x: Math.floor(agent.x), y: Math.floor(agent.y) }, targetDesk);
-       if (p.length > 0) {
-         agent.onReachDestination = runTask;
-         agent.setPath(p);
-       } else {
-         agent.x = targetDesk.x;
-         runTask();
-       }
-    }
+    return new Promise((resolve) => {
+      if (Math.abs(agent.x - targetDesk.x) < 0.1 && Math.abs(agent.y - targetDesk.y) < 0.1) {
+         runTask().then(resolve);
+      } else {
+         const p = Pathfinding.findPath(gameStateRef.current.grid, { x: Math.round(agent.x), y: Math.round(agent.y) }, targetDesk);
+         if (p.length > 0) {
+           agent.onReachDestination = () => { runTask().then(resolve); };
+           agent.setPath(p);
+         } else {
+           agent.x = targetDesk.x;
+           agent.y = targetDesk.y;
+           runTask().then(resolve);
+         }
+      }
+    });
   };
 
   const handleAssignTask = async (task: string) => {
@@ -208,14 +242,31 @@ export default function Page() {
   useEffect(() => {
     let lastUpdateId = 0;
     let isPolling = true;
+    let abortController = new AbortController();
 
     const pollTelegram = async () => {
       if (!isPolling) return;
       try {
-        const res = await fetch(`https://api.telegram.org/bot8681622018:AAGro-cOuMCBTWK41Z2OZdPHaGzgCQ_ElWk/getUpdates?offset=${lastUpdateId + 1}&timeout=30`);
+        const res = await fetch('/api/telegram/updates', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ offset: lastUpdateId + 1 }),
+          signal: abortController.signal
+        });
+        
+        if (!res.ok) {
+           const errText = await res.text();
+           console.error("Failed to fetch Telegram updates:", errText);
+           // Wait before retrying
+           if (isPolling) {
+             setTimeout(pollTelegram, 5000);
+           }
+           return;
+        }
+        
         const data = await res.json();
         
-        if (data.ok && data.result.length > 0) {
+        if (data.ok && data.result && data.result.length > 0) {
           for (const update of data.result) {
             lastUpdateId = Math.max(lastUpdateId, update.update_id);
             if (update.message && update.message.text) {
@@ -226,22 +277,36 @@ export default function Page() {
               const availableAgent = state.characters.find(c => c.state === CharacterState.IDLE) || state.characters[0];
               
               if (availableAgent) {
-                assignTaskToAgent(availableAgent.id, `[Telegram] ${text}`);
+                assignTaskToAgent(availableAgent.id, `[Telegram] ${text}`).then((res: any) => {
+                  if (res && res.result) {
+                    fetch('/api/telegram/send', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ chat_id: update.message.chat.id, text: `[${availableAgent.name}]: ${res.result}` })
+                    }).catch(err => console.error("Error sending TG msg:", err));
+                  }
+                });
               }
             }
           }
         }
-      } catch (e) {
+      } catch (e: any) {
+        if (e.name === 'AbortError') {
+          return;
+        }
         console.error("Telegram poll error", e);
       }
       
       if (isPolling) {
-        setTimeout(pollTelegram, 3000);
+        setTimeout(pollTelegram, 5000); // Polling interval
       }
     };
     
     pollTelegram();
-    return () => { isPolling = false; };
+    return () => { 
+        isPolling = false; 
+        abortController.abort();
+    };
   }, []);
 
   const selectedAgent = gameStateRef.current.characters.find(c => c.id === selectedAgentId) || null;
@@ -256,7 +321,7 @@ export default function Page() {
       </div>
       <div className="flex-1 flex overflow-hidden relative">
         {/* Floating HUD Controls */}
-        <div className="absolute top-4 left-4 p-4 bg-black/80 border border-white/10 w-64 backdrop-blur-md z-10 font-mono text-[#e0e0e0]">
+        <div className="absolute top-4 left-4 p-4 bg-black/80 border border-white/10 w-64 backdrop-blur-md z-50 font-mono text-[#e0e0e0] pointer-events-auto">
           <h3 className="text-[10px] uppercase text-white/40 mb-3 tracking-widest text-blue-400 font-bold">AuWorker Control</h3>
           <div className="space-y-2 text-[11px]">
             <div className="flex justify-between"><span>Active Tasks</span> <span className="text-blue-400 font-bold">{Object.keys(loadingMap).filter(k => loadingMap[k]).length}</span></div>
@@ -271,6 +336,22 @@ export default function Page() {
               ))}
             </div>
             <div className="mt-4 pt-4 border-t border-white/5 space-y-2">
+              <input 
+                type="text" 
+                placeholder="Give general task..."
+                className="w-full bg-black/50 border border-white/10 px-2 py-1 text-[10px] outline-none focus:border-blue-400"
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && e.currentTarget.value.trim()) {
+                    const task = e.currentTarget.value.trim();
+                    e.currentTarget.value = '';
+                    const availableAgent = characterList.find(c => c.state === CharacterState.IDLE) || characterList[0];
+                    if (availableAgent) {
+                      // Trigger task assignment globally (need to expose a function or use event, we can just use a generic event or direct state manipulation if within scope)
+                      window.dispatchEvent(new CustomEvent('assignGeneralTask', { detail: { task, agentId: availableAgent.id } }));
+                    }
+                  }
+                }}
+              />
               <button 
                 onClick={() => setShowHireMenu(true)}
                 className="w-full py-1 border border-blue-500/50 hover:bg-blue-500/10 text-blue-400 text-[10px] uppercase transition-colors"
@@ -306,7 +387,7 @@ export default function Page() {
         
         {/* Hire Menu Overlay */}
         {showHireMenu && (
-          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm z-30 flex items-center justify-center">
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center pointer-events-auto">
             <div className="w-[400px] bg-[#141416] border border-white/10 shadow-2xl p-6 font-mono text-[#e0e0e0]">
               <div className="flex justify-between items-center mb-6">
                 <h2 className="text-sm font-bold uppercase tracking-widest text-blue-400">Recruit New Worker</h2>
@@ -323,16 +404,16 @@ export default function Page() {
                       className="border border-white/5 hover:border-blue-500/50 bg-black/40 hover:bg-blue-500/10 p-4 transition flex flex-col items-center gap-2"
                     >
                       <div className="w-12 h-12 bg-white/5 rounded-full overflow-hidden shrink-0">
-                        <div 
-                          style={{
-                            width: '100%',
-                            height: '100%',
-                            backgroundImage: `url(/char_${idx}.png)`,
-                            backgroundPosition: '0% 0%',
-                            backgroundSize: '700% 300%',
-                            imageRendering: 'pixelated'
-                          }} 
-                        />
+                      <div 
+                        className="w-full h-full"
+                        style={{
+                          backgroundImage: `url(/char_${idx}.png)`,
+                          backgroundPosition: '16.66% 0%',
+                          backgroundSize: '700% 300%',
+                          backgroundRepeat: 'no-repeat',
+                          imageRendering: 'pixelated'
+                        }} 
+                      />
                       </div>
                       <span className="text-[10px] text-white/50">{names[idx]}</span>
                     </button>

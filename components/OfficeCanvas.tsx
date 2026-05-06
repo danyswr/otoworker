@@ -30,6 +30,7 @@ export function OfficeCanvas({ gameStateData, onSelectAgent }: OfficeCanvasProps
   // Track camera state locally for panning/zooming without triggering React re-renders for every frame
   const cameraRef = useRef({ x: 0, y: 0, zoom: 1 });
   const isDragging = useRef(false);
+  const isDraggingCharacter = useRef<string | null>(null);
   const lastMousePos = useRef({ x: 0, y: 0 });
   const hoverTrackingIdRef = useRef<string | null>(null);
 
@@ -173,9 +174,9 @@ export function OfficeCanvas({ gameStateData, onSelectAgent }: OfficeCanvasProps
           y: desk.y + 1, // Desk sorts at its tile bottom
           draw: () => {
             if (deskImg) {
-              const drawW = TILE_SIZE * 3;
-              const drawH = TILE_SIZE * 3;
-              renderer.drawImage(deskImg, 0, 0, deskImg.width, deskImg.height, desk.x * TILE_SIZE - TILE_SIZE * 1.0, desk.y * TILE_SIZE - TILE_SIZE * 1.2, drawW, drawH);
+              const drawW = TILE_SIZE * 1.4;
+              const drawH = TILE_SIZE * 1.4;
+              renderer.drawImage(deskImg, 0, 0, deskImg.width, deskImg.height, desk.x * TILE_SIZE - TILE_SIZE * 0.2, desk.y * TILE_SIZE - TILE_SIZE * 0.4, drawW, drawH);
             } else {
               renderer.drawRect(desk.x * TILE_SIZE, desk.y * TILE_SIZE, TILE_SIZE, TILE_SIZE, "brown");
             }
@@ -198,10 +199,12 @@ export function OfficeCanvas({ gameStateData, onSelectAgent }: OfficeCanvasProps
 
       // Characters
       gameStateData.characters.forEach(char => {
+        const isDragged = char.id === isDraggingCharacter.current;
         renderables.push({
-          y: char.y + 0.9, // Sort by feet position (near bottom of tile)
+          y: isDragged ? Infinity : char.y + 0.9, // Sort dragged character on top of everything
           draw: () => {
-            char.draw(renderer, TILE_SIZE, char.id === gameStateData.selectedId || char.id === hoverTrackingIdRef.current);
+            const isHoveredOrSelected = char.id === gameStateData.selectedId || char.id === hoverTrackingIdRef.current;
+            char.draw(renderer, TILE_SIZE, isHoveredOrSelected, isDragged);
             
             // Draw chat bubble if character has active message or is near someone talking
             if (char.chatTimer > 0) {
@@ -268,7 +271,6 @@ export function OfficeCanvas({ gameStateData, onSelectAgent }: OfficeCanvasProps
   // But we mostly mutate gameStateData by reference, so no extra sync needed.
 
   const handlePointerDown = (e: React.PointerEvent) => {
-    isDragging.current = true;
     lastMousePos.current = { x: e.clientX, y: e.clientY };
 
     // Detect click on character
@@ -298,6 +300,13 @@ export function OfficeCanvas({ gameStateData, onSelectAgent }: OfficeCanvasProps
       }
     }
 
+    isDraggingCharacter.current = clickedAgentId;
+    
+    // Only pan if not dragging a character
+    if (!clickedAgentId) {
+      isDragging.current = true;
+    }
+    
     onSelectAgent(clickedAgentId);
   };
 
@@ -326,6 +335,17 @@ export function OfficeCanvas({ gameStateData, onSelectAgent }: OfficeCanvasProps
     
     hoverTrackingIdRef.current = hoveredId;
 
+    if (isDraggingCharacter.current) {
+        const char = gameStateData.characters.find(c => c.id === isDraggingCharacter.current);
+        if (char) {
+           char.x = (wx - TILE_SIZE/2) / TILE_SIZE; // centering on cursor
+           char.y = (wy - TILE_SIZE/2) / TILE_SIZE;
+           char.state = CharacterState.IDLE;
+           char.setPath([]); 
+        }
+        return;
+    }
+
     if (!isDragging.current) return;
 
     const dx = e.clientX - lastMousePos.current.x;
@@ -340,6 +360,7 @@ export function OfficeCanvas({ gameStateData, onSelectAgent }: OfficeCanvasProps
 
   const handlePointerUp = () => {
     isDragging.current = false;
+    isDraggingCharacter.current = null;
   };
 
   const handleWheel = (e: React.WheelEvent) => {
