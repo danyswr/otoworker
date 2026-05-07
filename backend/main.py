@@ -6,6 +6,7 @@ import subprocess
 import logging
 from datetime import datetime
 import os
+from swarm_agents import run_swarm_task
 
 # Konfigurasi Logging
 logging.basicConfig(
@@ -39,10 +40,16 @@ app.add_middleware(
 class CommandRequest(BaseModel):
     command: str
 
+class SwarmRequest(BaseModel):
+    instruction: str
+
 class CommandResponse(BaseModel):
     stdout: str
     stderr: str
     returncode: int
+
+class SwarmResponse(BaseModel):
+    result: str
 
 @app.post("/execute", response_model=CommandResponse)
 def execute_command(request: CommandRequest, api_key: str = Depends(get_api_key)):
@@ -69,6 +76,21 @@ def execute_command(request: CommandRequest, api_key: str = Depends(get_api_key)
         )
     except Exception as e:
         logger.error(f"Error executing command: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/swarm_execute", response_model=SwarmResponse)
+def execute_swarm(request: SwarmRequest, api_key: str = Depends(get_api_key)):
+    """
+    Endpoint ini menerima instruksi bahasa natural.
+    Instruksi dikirim ke Multi-Agent (Manager & Executor) untuk diselesaikan secara otonom.
+    """
+    logger.info(f"Swarm request received: {request.instruction}")
+    try:
+        # Menjalankan agent swarm
+        final_answer = run_swarm_task(request.instruction)
+        return SwarmResponse(result=str(final_answer))
+    except Exception as e:
+        logger.error(f"Error in swarm execution: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/")
