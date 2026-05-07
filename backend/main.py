@@ -1,9 +1,11 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Security, Depends
+from fastapi.security.api_key import APIKeyHeader
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import subprocess
 import logging
 from datetime import datetime
+import os
 
 # Konfigurasi Logging
 logging.basicConfig(
@@ -12,6 +14,16 @@ logging.basicConfig(
     format="%(asctime)s - %(levelname)s - %(message)s"
 )
 logger = logging.getLogger(__name__)
+
+API_KEY = os.environ.get("EXECUTE_API_KEY", "super_secret_jules_key_123")
+API_KEY_NAME = "X-API-KEY"
+
+api_key_header = APIKeyHeader(name=API_KEY_NAME, auto_error=False)
+
+def get_api_key(api_key_header: str = Security(api_key_header)):
+    if api_key_header == API_KEY:
+        return api_key_header
+    raise HTTPException(status_code=403, detail="Could not validate API KEY")
 
 app = FastAPI()
 
@@ -33,7 +45,7 @@ class CommandResponse(BaseModel):
     returncode: int
 
 @app.post("/execute", response_model=CommandResponse)
-def execute_command(request: CommandRequest):
+def execute_command(request: CommandRequest, api_key: str = Depends(get_api_key)):
     logger.info(f"Executing command: {request.command}")
     try:
         # Warning: shell=True can be extremely dangerous if not properly secured.
