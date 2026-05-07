@@ -4,6 +4,3 @@ coverage/
 *.log
 .env*
 !.env.example
-backend/venv
-__pycache__/
-backend/execute.log
