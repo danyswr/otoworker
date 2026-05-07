@@ -19,7 +19,7 @@ const RAW_MAP = [
   [  1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1 ], 
   [  1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1 ], 
   [  1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1 ], 
-  [  1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 ], 
+  [  1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 ], 
   [  1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1 ], 
   [  1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1 ],
   [  1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1 ], 
@@ -51,11 +51,7 @@ function createGrid() {
 
   for (const desk of defaultDesks) {
     if (grid[desk.y] && grid[desk.y][desk.x] !== undefined) {
-      grid[desk.y][desk.x] = 1; // Unwalkable block
-    }
-    // Sitting spot above desk (y-1) MUST be walkable
-    if (grid[desk.y - 1] && grid[desk.y - 1][desk.x] !== undefined) {
-      grid[desk.y - 1][desk.x] = 0;
+      grid[desk.y][desk.x] = 0; // Desks MUST be walkable for characters to sit AT them
     }
   }
   
@@ -106,8 +102,8 @@ export default function Page() {
   useEffect(() => {
     const freshGrid = createGrid();
     
-    // Meeting table collision area (more accurate based on visual size 6x3.5)
-    for (let my = 3; my <= 7; my++) {
+    // Meeting table collision area (matches the asset size)
+    for (let my = 2; my <= 7; my++) {
       for (let mx = 9; mx <= 15; mx++) {
         if (freshGrid[my] && freshGrid[my][mx] !== undefined) {
            freshGrid[my][mx] = 1;
@@ -115,22 +111,21 @@ export default function Page() {
       }
     }
 
-    // Left side vertical wall from reception to bottom
-    for (let my = 8; my <= 18; my++) {
-      if (freshGrid[my] && my > 9) { // leave gap at y=8,9 for entrance to reception
-         freshGrid[my][7] = 1;
+    // Harden the central wall line
+    for (let mx = 7; mx <= 22; mx++) {
+      if (freshGrid[7]) freshGrid[7][mx] = 1;
+    }
+
+    // Reception desk area
+    for (let my = 10; my <= 12; my++) {
+      for (let mx = 1; mx <= 6; mx++) {
+        if (freshGrid[my]) freshGrid[my][mx] = 1;
       }
     }
     
-    // Add horizontal reception desk bottom boundary
-    for (let mx = 1; mx <= 6; mx++) {
-      if (freshGrid[12]) freshGrid[12][mx] = 1;
-      if (freshGrid[10]) freshGrid[10][mx] = 1;
-    }
-    
-    // Lockers
-    if (freshGrid[2]) {
-      for(let x=1; x<=6; x++) freshGrid[2][x] = 1;
+    // Bottom border
+    for (let mx = 0; mx <= 22; mx++) {
+      if (freshGrid[18]) freshGrid[18][mx] = 1;
     }
 
     gameStateRef.current.grid = freshGrid;
@@ -190,8 +185,8 @@ export default function Page() {
     // Find assigned desk mapping from gameStateRef proximity or find a new free one
     const occupiedDesks = new Set(
       gameStateRef.current.characters
-        .filter(c => c.id !== agent.id)
-        .map(c => `${Math.floor(c.x)},${Math.floor(c.y) - 1}`)
+        .filter(c => c.id !== agent.id && c.state === CharacterState.WORK)
+        .map(c => `${Math.floor(c.x)},${Math.floor(c.y)}`)
     );
     
     let assignedDesk = gameStateRef.current.desks.find(d => 
@@ -204,8 +199,7 @@ export default function Page() {
     const originalDesk = assignedDesk ? { x: assignedDesk.x, y: assignedDesk.y } : { x: Math.floor(agent.x), y: Math.floor(agent.y) };
 
     const runTask = async () => {
-      // Correct worker rotation at desk (sit behind desk facing monitor / down)
-      agent.y = originalDesk.y - 1;
+      // Character is AT the desk now
       agent.direction = 0; // face down
       agent.state = CharacterState.WORK;
       
@@ -250,8 +244,8 @@ export default function Page() {
       }
     };
 
-    // Send the agent to their desk to work (stand behind it, facing down)
-    const targetDesk = { x: originalDesk.x, y: originalDesk.y - 1 };
+    // Send the agent to their desk to work (exactly on the desk)
+    const targetDesk = { x: originalDesk.x, y: originalDesk.y };
     
     // Check if agent is already at the desk working spot
     return new Promise((resolve) => {
@@ -263,7 +257,9 @@ export default function Page() {
            agent.onReachDestination = () => { runTask().then(resolve); };
            agent.setPath(p);
          } else {
-           // Fallback: search for nearest valid spot if desk is blocked
+           // Fallback if blocked
+           agent.x = targetDesk.x;
+           agent.y = targetDesk.y;
            runTask().then(resolve);
          }
       }

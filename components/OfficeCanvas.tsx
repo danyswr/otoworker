@@ -87,7 +87,11 @@ export function OfficeCanvas({ gameStateData, onSelectAgent }: OfficeCanvasProps
             // Wander
             const rx = Math.floor(Math.random() * gameStateData.grid[0].length);
             const ry = Math.floor(Math.random() * gameStateData.grid.length);
-            if (gameStateData.grid[ry]?.[rx] === 0) {
+            
+            // Check if spot is walkable AND not a desk (we only want them to sit at desks when assigned)
+            const isDesk = gameStateData.desks.some(d => d.x === rx && d.y === ry);
+            
+            if (gameStateData.grid[ry]?.[rx] === 0 && !isDesk) {
               const p = Pathfinding.findPath(gameStateData.grid, { x: Math.round(char.x), y: Math.round(char.y) }, { x: rx, y: ry });
               if (p.length > 0) {
                  char.setPath(p);

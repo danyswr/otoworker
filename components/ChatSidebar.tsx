@@ -37,7 +37,7 @@ export function ChatSidebar({ agent, onClose, onAssignTask, messages, isLoading 
           opacity: 1,
           width: isMinimized ? 380 : 380 
         }}
-        transition={{ type: 'tween', duration: 0.15, ease: 'circOut' }}
+        transition={{ type: 'tween', duration: 0.12, ease: 'easeOut' }}
         exit={{ x: 380, opacity: 0 }}
         className="fixed right-0 top-0 h-full border-l border-white/10 bg-[#0c0c0e] flex flex-row font-mono text-[#e0e0e0] z-[100] shadow-2xl transition-all"
       >
