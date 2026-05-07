@@ -1,33 +1,36 @@
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
-import { OfficeCanvas, GameState } from '@/components/OfficeCanvas';
-import { ChatSidebar } from '@/components/ChatSidebar';
+import dynamic from 'next/dynamic';
+import { GoogleGenAI } from '@google/genai';
+import type { GameState } from '@/components/OfficeCanvas';
 import { Character, CharacterState } from '@/lib/office/worker/api/Character';
 import { Pathfinding } from '@/lib/office/engine/Pathfinding';
 import { SpriteLoader } from '@/lib/office/engine/SpriteLoader';
 
+const OfficeCanvas = dynamic(() => import('@/components/OfficeCanvas').then(m => m.OfficeCanvas), { ssr: false });
+const ChatSidebar = dynamic(() => import('@/components/ChatSidebar').then(m => m.ChatSidebar), { ssr: false });
+
 const RAW_MAP = [
-  [ 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 ],
-  [ 1, 1, 1, 1, 0, 1, 1, 1, 1, 0, 0, 1, 1, 1, 0, 0, 1, 1, 1, 1, 0, 1, 1 ],
-  [ 1, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 1, 1 ],
-  [ 1, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 1, 1 ],
-  [ 1, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 1, 1 ],
-  [ 1, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 1, 1 ],
-  [ 1, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 1, 1 ],
-  [ 1, 1, 1, 1, 1, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 1, 1 ],
-  [ 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1 ],
-  [ 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1 ],
-  [ 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1 ],
-  [ 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1 ],
-  [ 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1 ],
-  [ 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1 ],
-  [ 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1 ],
-  [ 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1 ],
-  [ 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1 ],
-  [ 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1 ],
-  [ 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1 ],
-  [ 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 ]
+  [  1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 ],
+  [  1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 ],
+  [  1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 ], 
+  [  1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1 ], 
+  [  1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1 ], 
+  [  1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1 ], 
+  [  1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1 ], 
+  [  1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 ], 
+  [  1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1 ], 
+  [  1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1 ],
+  [  1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1 ], 
+  [  1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1 ],
+  [  1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1 ], 
+  [  1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1 ], 
+  [  1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1 ], 
+  [  1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1 ], 
+  [  1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1 ], 
+  [  1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1 ], 
+  [  1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 ]
 ];
 
 const MAX_COLS = Math.max(...RAW_MAP.map(r => r.length));
@@ -39,15 +42,20 @@ function createGrid() {
     return newRow;
   });
   
-  // Bake desks as unwalkable so agents don't randomly wander into them
+  // Default desks to be added to grid
   const defaultDesks = [
     { x: 9, y: 10 }, { x: 9, y: 13 }, { x: 11, y: 10 }, { x: 11, y: 13 },
     { x: 13, y: 10 }, { x: 13, y: 13 }, { x: 15, y: 10 }, { x: 15, y: 13 },
     { x: 17, y: 10 }, { x: 17, y: 13 }, { x: 19, y: 10 }, { x: 19, y: 13 },
   ];
+
   for (const desk of defaultDesks) {
     if (grid[desk.y] && grid[desk.y][desk.x] !== undefined) {
-      grid[desk.y][desk.x] = 1;
+      grid[desk.y][desk.x] = 1; // Unwalkable block
+    }
+    // Sitting spot above desk (y-1) MUST be walkable
+    if (grid[desk.y - 1] && grid[desk.y - 1][desk.x] !== undefined) {
+      grid[desk.y - 1][desk.x] = 0;
     }
   }
   
@@ -62,7 +70,10 @@ export default function Page() {
   const [showHireMenu, setShowHireMenu] = useState(false);
   const [characterList, setCharacterList] = useState<Character[]>([]);
 
+  const [isClient, setIsClient] = useState(false);
+
   useEffect(() => {
+    setIsClient(true);
     SpriteLoader.loadSheets().then(() => {
       setAssetsLoaded(true);
     });
@@ -84,8 +95,8 @@ export default function Page() {
   // Initial characters
   useEffect(() => {
     const chars = [
-      new Character("c1", "Alice", 9, 11, "#EF4444", 0),
-      new Character("c2", "Bob", 11, 11, "#3B82F6", 1),
+      new Character("c1", "Alice", 9, 10, "#EF4444", 0),
+      new Character("c2", "Bob", 11, 10, "#3B82F6", 1),
     ];
     gameStateRef.current.characters = chars;
     setCharacterList([...chars]);
@@ -94,17 +105,34 @@ export default function Page() {
   // Make desks walls in grid so they can't path through them, only step on them
   useEffect(() => {
     const freshGrid = createGrid();
-    for (const d of gameStateRef.current.desks) {
-      freshGrid[d.y][d.x] = 1; // Mark desk directly as 1 so it matches wall behavior
-    }
-    // Add meeting table collision (x: 10..14, y: 4..6 roughly)
-    for (let my = 4; my <= 6; my++) {
-      for (let mx = 10; mx <= 14; mx++) {
+    
+    // Meeting table collision area (more accurate based on visual size 6x3.5)
+    for (let my = 3; my <= 7; my++) {
+      for (let mx = 9; mx <= 15; mx++) {
         if (freshGrid[my] && freshGrid[my][mx] !== undefined) {
            freshGrid[my][mx] = 1;
         }
       }
     }
+
+    // Left side vertical wall from reception to bottom
+    for (let my = 8; my <= 18; my++) {
+      if (freshGrid[my] && my > 9) { // leave gap at y=8,9 for entrance to reception
+         freshGrid[my][7] = 1;
+      }
+    }
+    
+    // Add horizontal reception desk bottom boundary
+    for (let mx = 1; mx <= 6; mx++) {
+      if (freshGrid[12]) freshGrid[12][mx] = 1;
+      if (freshGrid[10]) freshGrid[10][mx] = 1;
+    }
+    
+    // Lockers
+    if (freshGrid[2]) {
+      for(let x=1; x<=6; x++) freshGrid[2][x] = 1;
+    }
+
     gameStateRef.current.grid = freshGrid;
   }, []);
 
@@ -176,19 +204,29 @@ export default function Page() {
     const originalDesk = assignedDesk ? { x: assignedDesk.x, y: assignedDesk.y } : { x: Math.floor(agent.x), y: Math.floor(agent.y) };
 
     const runTask = async () => {
-      // Correct worker rotation at desk
-      agent.y = originalDesk.y + 1;
-      agent.direction = 3; // face up
+      // Correct worker rotation at desk (sit behind desk facing monitor / down)
+      agent.y = originalDesk.y - 1;
+      agent.direction = 0; // face down
       agent.state = CharacterState.WORK;
       
       try {
-        const res = await fetch('/api/chat', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ task, agentName: agent.name })
+        const apiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY || '';
+        if (!apiKey) {
+           throw new Error("Missing Gemini API Key");
+        }
+        const ai = new GoogleGenAI({ apiKey });
+        
+        const response = await ai.models.generateContent({
+          model: 'gemini-3-flash-preview',
+          contents: [
+            {
+               role: 'user',
+               parts: [{ text: `You are an AI virtual worker named ${agent.name || 'Worker'} inside a simulated top-down 2D office game. A user has given you the following task to work on: "${task}". Please respond in character. Be extremely concise (max 2 sentences). Do not break character. Do not provide code blocks. Example: 'I'll get right on that boss! Processing the spreadsheet now.'` }]
+            }
+          ]
         });
-        const data = await res.json();
-        const responseText = data.result || data.error;
+
+        const responseText = response.text || "Internal failure in my logical unit...";
 
         setChats(prev => ({
           ...prev,
@@ -198,7 +236,7 @@ export default function Page() {
         
         agent.state = CharacterState.IDLE;
         
-        return data;
+        return { result: responseText };
       } catch (e: any) {
         setChats(prev => ({
           ...prev,
@@ -212,8 +250,8 @@ export default function Page() {
       }
     };
 
-    // Send the agent to their desk to work (stand in front of it, facing up)
-    const targetDesk = { x: originalDesk.x, y: originalDesk.y + 1 };
+    // Send the agent to their desk to work (stand behind it, facing down)
+    const targetDesk = { x: originalDesk.x, y: originalDesk.y - 1 };
     
     // Check if agent is already at the desk working spot
     return new Promise((resolve) => {
@@ -225,8 +263,7 @@ export default function Page() {
            agent.onReachDestination = () => { runTask().then(resolve); };
            agent.setPath(p);
          } else {
-           agent.x = targetDesk.x;
-           agent.y = targetDesk.y;
+           // Fallback: search for nearest valid spot if desk is blocked
            runTask().then(resolve);
          }
       }
@@ -294,7 +331,11 @@ export default function Page() {
         if (e.name === 'AbortError') {
           return;
         }
-        console.error("Telegram poll error", e);
+        if (e.message && e.message.includes('Failed to fetch')) {
+          // server might be restarting or offline, ignore smoothly
+        } else {
+          console.warn("Telegram poll issue:", e.message);
+        }
       }
       
       if (isPolling) {
@@ -310,6 +351,8 @@ export default function Page() {
   }, []);
 
   const selectedAgent = gameStateRef.current.characters.find(c => c.id === selectedAgentId) || null;
+
+  if (!isClient) return null;
 
   return (
     <div className="fixed inset-0 bg-[#0c0c0e] text-[#e0e0e0] font-mono flex flex-col overflow-hidden">

@@ -61,7 +61,7 @@ export function OfficeCanvas({ gameStateData, onSelectAgent }: OfficeCanvasProps
           char.chatTimer -= dt;
         }
         
-        if (char.state === CharacterState.IDLE) {
+        if (char.state === CharacterState.IDLE && gameStateData.selectedId !== char.id && isDraggingCharacter.current !== char.id) {
           // Check proximity to other IDLE characters for chat
           const nearby = gameStateData.characters.find(c => c !== char && c.state === CharacterState.IDLE && Math.abs(c.x - char.x) < 2 && Math.abs(c.y - char.y) < 2);
           
@@ -171,7 +171,7 @@ export function OfficeCanvas({ gameStateData, onSelectAgent }: OfficeCanvasProps
       for (const desk of gameStateData.desks) {
         const deskImg = SpriteLoader.deskImage;
         renderables.push({
-          y: desk.y + 1, // Desk sorts at its tile bottom
+          y: desk.y + 1.2, // Increased sort weight so it nimpa (overlaps) character at y-1 and y
           draw: () => {
             if (deskImg) {
               const drawW = TILE_SIZE * 1.4;
@@ -271,6 +271,7 @@ export function OfficeCanvas({ gameStateData, onSelectAgent }: OfficeCanvasProps
   // But we mostly mutate gameStateData by reference, so no extra sync needed.
 
   const handlePointerDown = (e: React.PointerEvent) => {
+    e.currentTarget.setPointerCapture(e.pointerId);
     lastMousePos.current = { x: e.clientX, y: e.clientY };
 
     // Detect click on character
@@ -293,8 +294,8 @@ export function OfficeCanvas({ gameStateData, onSelectAgent }: OfficeCanvasProps
     for (const char of gameStateData.characters) {
       const cx = char.x * TILE_SIZE;
       const cy = char.y * TILE_SIZE;
-      const csize = TILE_SIZE;
-      if (wx >= cx && wx <= cx + csize && wy >= cy && wy <= cy + csize) {
+      // Adjusted bounds to be tighter to character head/body
+      if (wx >= cx && wx <= cx + TILE_SIZE && wy >= cy - TILE_SIZE && wy <= cy + TILE_SIZE) {
         clickedAgentId = char.id;
         break;
       }
@@ -326,8 +327,7 @@ export function OfficeCanvas({ gameStateData, onSelectAgent }: OfficeCanvasProps
     for (const char of gameStateData.characters) {
       const cx = char.x * TILE_SIZE;
       const cy = char.y * TILE_SIZE;
-      // visual bounds are roughly cx - size/2 to cx + size/2
-      if (wx >= cx - TILE_SIZE/2 && wx <= cx + TILE_SIZE*1.5 && wy >= cy - TILE_SIZE && wy <= cy + TILE_SIZE) {
+      if (wx >= cx && wx <= cx + TILE_SIZE && wy >= cy - TILE_SIZE/2 && wy <= cy + TILE_SIZE) {
         hoveredId = char.id;
         break;
       }
@@ -358,8 +358,46 @@ export function OfficeCanvas({ gameStateData, onSelectAgent }: OfficeCanvasProps
     lastMousePos.current = { x: e.clientX, y: e.clientY };
   };
 
-  const handlePointerUp = () => {
+  const handlePointerUp = (e: React.PointerEvent) => {
+    e.currentTarget.releasePointerCapture(e.pointerId);
     isDragging.current = false;
+    
+    if (isDraggingCharacter.current) {
+      const char = gameStateData.characters.find(c => c.id === isDraggingCharacter.current);
+      if (char) {
+        // Snap to grid
+        let snX = Math.round(char.x);
+        let snY = Math.round(char.y);
+        
+        // Ensure within bounds and not in wall
+        const grid = gameStateData.grid;
+        if (grid && grid.length > 0) {
+          snY = Math.max(0, Math.min(snY, grid.length - 1));
+          snX = Math.max(0, Math.min(snX, grid[0].length - 1));
+          
+          // simple nearest search if placed on a wall
+          if (grid[snY][snX] !== 0) {
+            let found = false;
+            for (let r = 1; r < 5 && !found; r++) {
+              for (let dy = -r; dy <= r && !found; dy++) {
+                for (let dx = -r; dx <= r && !found; dx++) {
+                  const ny = snY + dy;
+                  const nx = snX + dx;
+                  if (ny >= 0 && ny < grid.length && nx >= 0 && nx < grid[0].length && grid[ny][nx] === 0) {
+                    snX = nx;
+                    snY = ny;
+                    found = true;
+                  }
+                }
+              }
+            }
+          }
+        }
+        char.x = snX;
+        char.y = snY;
+      }
+    }
+
     isDraggingCharacter.current = null;
   };
 
@@ -379,6 +417,7 @@ export function OfficeCanvas({ gameStateData, onSelectAgent }: OfficeCanvasProps
       onPointerUp={handlePointerUp}
       onPointerLeave={handlePointerUp}
       onWheel={handleWheel}
+      style={{ touchAction: 'none' }}
     >
       <div className="absolute inset-0 pointer-events-none" style={{ backgroundImage: "radial-gradient(circle at 1px 1px, rgba(255,255,255,0.05) 1px, transparent 0)", backgroundSize: "32px 32px" }}></div>
       <canvas ref={canvasRef} className="block w-full h-full relative z-10" />

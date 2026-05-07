@@ -20,7 +20,7 @@ export class Character {
   state: CharacterState = CharacterState.IDLE;
   
   private path: Point[] = [];
-  private moveSpeed: number = 4; // Tiles per second
+  private moveSpeed: number = 6; // Tiles per second
   public onReachDestination?: () => void;
   
   // Animation state
@@ -29,7 +29,7 @@ export class Character {
   private animFrame: number = 1; // 0, 1, 2 frames for walk
   public chatMessage: boolean = false;
   public chatTimer: number = 0;
-
+  
   constructor(id: string, name: string, x: number, y: number, color: string, spriteIndex: number = 0) {
     this.id = id;
     this.name = name;
@@ -49,38 +49,24 @@ export class Character {
   update(dt: number) {
     if (this.state === CharacterState.WALK || this.state === CharacterState.WORK) {
       this.frameTime += dt;
-      if (this.frameTime > 0.15) {
+      if (this.frameTime > 0.1) {
         this.frameTime = 0;
-        this.animFrame = (this.animFrame + 1) % 12; // Mod 12 to safely use it in drawing logic
+        this.animFrame = (this.animFrame + 1) % 12;
       }
     }
 
     if (this.state === CharacterState.WALK) {
       if (this.path.length > 0) {
-        const target = this.path[0];
+        let target = this.path[0];
         
         let dx = target.x - this.x;
         let dy = target.y - this.y;
+        let dist = Math.sqrt(dx * dx + dy * dy);
         
-        // Strictly orthogonal movement to prevent diagonal wall clipping
-        if (Math.abs(dx) > 0.01 && Math.abs(dy) > 0.01) {
-          if (Math.abs(dx) > Math.abs(dy)) {
-            dy = 0;
-          } else {
-            dx = 0;
-          }
-        }
-        
-        const dist = Math.sqrt(dx * dx + dy * dy);
-        
-        if (Math.abs(dx) > Math.abs(dy)) {
-          this.direction = dx > 0 ? 2 : 1; // Right : Left
-        } else {
-          this.direction = dy > 0 ? 0 : 3; // Down : Up
-        }
+        const moveDist = this.moveSpeed * dt;
 
-        // If close enough, snap along the axis that was moved
-        if (dist < 0.1 && (target.x === this.x || target.y === this.y || Math.abs(target.x - this.x) + Math.abs(target.y - this.y) < 0.2)) {
+        if (dist <= moveDist) {
+          // Reached the next path node
           this.x = target.x;
           this.y = target.y;
           this.path.shift();
@@ -94,9 +80,15 @@ export class Character {
             }
           }
         } else {
-          // Normalize and move
-          this.x += (dx / dist) * this.moveSpeed * dt;
-          this.y += (dy / dist) * this.moveSpeed * dt;
+          // Normalize and move directly towards target (which is guaranteed orthogonal if A* produces orthogonal)
+          this.x += (dx / dist) * moveDist;
+          this.y += (dy / dist) * moveDist;
+        }
+
+        if (Math.abs(dx) > Math.abs(dy)) {
+          this.direction = dx > 0 ? 2 : 1; // Right : Left
+        } else if (dy !== 0) {
+          this.direction = dy > 0 ? 0 : 3; // Down : Up
         }
       } else {
         this.state = CharacterState.IDLE;
@@ -186,20 +178,6 @@ export class Character {
       renderer.drawRect(px + tileSize*0.1, py + tileSize*0.1, tileSize*0.8, tileSize*0.8, this.color);
     }
     
-    // Status box and name only when hovered or selected
-    if (isSelected) {
-      let statusText = `[${this.state}]`;
-      const boxWidth = 90;
-      const boxHeight = 16;
-      const boxX = px + charSize / 2 - boxWidth / 2;
-      const boxY = Math.min(py - 20, py - charSize * 1.5); // Push box up
-
-
-      renderer.drawRect(boxX, boxY, boxWidth, boxHeight, "black");
-      
-      const stateColor = this.state === CharacterState.WORK ? '#4ade80' : this.state === CharacterState.ERROR ? '#ef4444' : '#60a5fa';
-      
-      renderer.drawText(`${statusText} ${this.name.toUpperCase()}`, px + charSize / 2, boxY + 11, stateColor, "9px monospace");
-    }
+    // Removed on-canvas status box as requested (using Sidebar instead)
   }
 }
