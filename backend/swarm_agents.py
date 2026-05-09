@@ -4,6 +4,7 @@ from langchain_google_genai import ChatGoogleGenerativeAI
 from dotenv import load_dotenv
 
 from agent_tools import read_file_tool, write_file_tool, execute_shell_tool
+from memory_tools import store_memory_tool, search_memory_tool
 
 load_dotenv()
 
@@ -16,11 +17,14 @@ def get_llm():
         google_api_key=os.getenv("GEMINI_API_KEY")
     )
 
+import asyncio
+from websocket_manager import manager
+
 def create_swarm(topic: str):
     llm = get_llm()
 
     # Daftar alat yang bisa digunakan oleh para agen untuk bekerja otonom
-    agent_tools = [read_file_tool, write_file_tool, execute_shell_tool]
+    agent_tools = [read_file_tool, write_file_tool, execute_shell_tool, store_memory_tool, search_memory_tool]
 
     # 1. The Autonomous Worker
     worker_agent = Agent(
@@ -85,7 +89,23 @@ def create_swarm(topic: str):
 
 def execute_swarm(topic: str):
     crew = create_swarm(topic)
+
+    # Define a callback to stream output to websocket
+    def step_callback(step_output):
+        # step_output could be a TaskOutput or AgentAction, we convert it to string
+        msg = f"Agent Action: {str(step_output)}"
+        manager.broadcast_sync(msg)
+
+    crew.step_callback = step_callback
+
+    # Broadcast start
+    manager.broadcast_sync(f"Starting swarm for topic: {topic}")
+
     result = crew.kickoff()
+
+    # Broadcast completion
+    manager.broadcast_sync("Swarm execution completed.")
+
     return result
 
 if __name__ == "__main__":

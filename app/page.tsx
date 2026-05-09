@@ -142,6 +142,8 @@ export default function Page() {
   const [swarmTopic, setSwarmTopic] = useState("");
   const [swarmStatus, setSwarmStatus] = useState<"idle" | "running" | "completed" | "error">("idle");
   const [swarmResult, setSwarmResult] = useState<string>("");
+  const [swarmLogs, setSwarmLogs] = useState<string[]>([]);
+  const [swarmHistory, setSwarmHistory] = useState<any[]>([]);
 
   useEffect(() => {
     setIsClient(true);
@@ -933,9 +935,39 @@ export default function Page() {
     }
   };
 
-  const [hudTab, setHudTab] = useState<"dashboard" | "roster" | "relay">(
+  const [hudTab, setHudTab] = useState<"dashboard" | "roster" | "relay" | "swarm">(
     "dashboard",
   );
+
+  // Setup WebSocket connection for streaming logs
+  useEffect(() => {
+    const ws = new WebSocket("ws://localhost:8000/ws/stream");
+    ws.onmessage = (event) => {
+      setSwarmLogs((prev) => [...prev, event.data]);
+    };
+    return () => ws.close();
+  }, []);
+
+  // Fetch History
+  const fetchHistory = async () => {
+    try {
+      const res = await fetch("http://localhost:8000/history", {
+        headers: { "X-API-KEY": "default-secret-key" }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setSwarmHistory(data);
+      }
+    } catch (e) {
+      console.error("Error fetching history", e);
+    }
+  };
+
+  useEffect(() => {
+    if (hudTab === "swarm") {
+      fetchHistory();
+    }
+  }, [hudTab, swarmStatus]);
   const [hudIsCollapsed, setHudIsCollapsed] = useState(false);
 
   // Telegram polling logic
@@ -1837,11 +1869,49 @@ export default function Page() {
                             </button>
                           </div>
 
+                          {swarmLogs.length > 0 && (
+                            <div className="bg-black/80 border border-slate-700/50 p-4 rounded-xl shadow-inner overflow-hidden flex flex-col mb-4">
+                              <span className="text-[10px] font-mono text-blue-400 uppercase tracking-widest mb-2 border-b border-slate-700/50 pb-2 flex items-center gap-2">
+                                <Activity size={12} className="animate-pulse" />
+                                Live Terminal Stream
+                              </span>
+                              <div className="text-[10px] font-mono text-slate-300 leading-relaxed overflow-y-auto max-h-48 scrollbar-thin flex flex-col gap-1">
+                                {swarmLogs.map((log, i) => (
+                                  <div key={i} className="whitespace-pre-wrap">
+                                    <span className="text-slate-500 mr-2">[{new Date().toLocaleTimeString()}]</span>
+                                    {log}
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
                           {swarmResult && (
-                            <div className="bg-black/60 border border-slate-700/50 p-4 rounded-xl shadow-inner overflow-hidden flex flex-col">
-                              <span className="text-[10px] font-mono text-slate-400 uppercase tracking-widest mb-2 border-b border-slate-700/50 pb-2">Swarm Output</span>
+                            <div className="bg-black/60 border border-emerald-900/50 p-4 rounded-xl shadow-inner overflow-hidden flex flex-col">
+                              <span className="text-[10px] font-mono text-emerald-500 uppercase tracking-widest mb-2 border-b border-emerald-900/50 pb-2">Final Swarm Output</span>
                               <div className="text-[11px] font-mono text-emerald-400 leading-relaxed overflow-y-auto max-h-48 scrollbar-thin whitespace-pre-wrap">
                                 {swarmResult}
+                              </div>
+                            </div>
+                          )}
+
+                          {swarmHistory.length > 0 && (
+                            <div className="mt-4 border-t border-slate-800/60 pt-4">
+                              <h4 className="text-xs font-sans font-semibold text-white mb-3 flex items-center gap-2">
+                                <Database size={14} className="text-indigo-400" />
+                                Swarm Memory & History
+                              </h4>
+                              <div className="flex flex-col gap-3 max-h-64 overflow-y-auto scrollbar-thin pr-2">
+                                {swarmHistory.map((item, i) => (
+                                  <div key={i} className="bg-slate-800/30 border border-slate-700/30 p-3 rounded-lg hover:bg-slate-800/50 transition-colors">
+                                    <div className="text-[10px] text-indigo-400 font-mono mb-1">
+                                      Topic: {item.topic}
+                                    </div>
+                                    <div className="text-[10px] text-slate-400 font-mono truncate">
+                                      {item.result}
+                                    </div>
+                                  </div>
+                                ))}
                               </div>
                             </div>
                           )}
