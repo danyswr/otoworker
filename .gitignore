@@ -4,3 +4,7 @@ coverage/
 *.log
 .env*
 !.env.example
+.next
+backend/__pycache__
+frontend_output.log
+backend_output.log

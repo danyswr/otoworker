@@ -1,4 +1,5 @@
 from fastapi import FastAPI, Depends, HTTPException, Header, status
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import subprocess
 from dotenv import load_dotenv
@@ -10,6 +11,15 @@ from swarm_agents import execute_swarm
 load_dotenv()
 
 app = FastAPI(title="Swarm Orchestrator Backend")
+
+# Setup CORS Middleware so the Next.js frontend can communicate with this backend
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"], # In production, replace with your frontend URL like ["http://localhost:3000"]
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # In a real scenario, this should be stored securely
 API_KEY = os.getenv("API_KEY")
@@ -46,29 +56,6 @@ def run_swarm(request: SwarmRequest):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.post("/shell_execute", dependencies=[Depends(verify_api_key)])
-def run_shell(request: ShellRequest):
-    """
-    WARNING: Executing remote shell commands via subprocess.run(shell=True)
-    is dangerous and only implemented here based on explicit user request.
-    Use with extreme caution.
-    """
-    try:
-        # Menjalankan perintah shell secara otonom
-        result = subprocess.run(
-            request.command,
-            shell=True,
-            capture_output=True,
-            text=True
-        )
-        return {
-            "command": request.command,
-            "stdout": result.stdout,
-            "stderr": result.stderr,
-            "returncode": result.returncode
-        }
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
 
 if __name__ == "__main__":
     import uvicorn
