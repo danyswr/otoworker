@@ -3,6 +3,8 @@ from crewai import Agent, Task, Crew, Process
 from langchain_google_genai import ChatGoogleGenerativeAI
 from dotenv import load_dotenv
 
+from agent_tools import read_file_tool, write_file_tool, execute_shell_tool
+
 load_dotenv()
 
 # Set up the LLM, we use Gemini by default as it's common in this repo
@@ -17,31 +19,36 @@ def get_llm():
 def create_swarm(topic: str):
     llm = get_llm()
 
-    # 1. The Opinionated Worker
+    # Daftar alat yang bisa digunakan oleh para agen untuk bekerja otonom
+    agent_tools = [read_file_tool, write_file_tool, execute_shell_tool]
+
+    # 1. The Autonomous Worker
     worker_agent = Agent(
-        role='Opinionated Expert Worker',
-        goal='To formulate strong, opinionated solutions and arguments regarding the given topic.',
-        backstory='You are a highly skilled but stubborn expert. You do not just give generic answers; you take a strong stance, formulate a bold opinion, and propose a concrete, possibly unconventional solution. You believe your way is the best way.',
+        role='Autonomous OpenClaw Worker',
+        goal='To formulate strong solutions, write code, run it in the workspace, and argue your points using actual output.',
+        backstory='You are a brilliant and highly autonomous computer operator. When given a problem, you don\'t just talk; you use your tools to write code/scripts into your workspace, execute them, and use the results to build a rock-solid, opinionated proposal.',
         verbose=True,
         allow_delegation=False,
+        tools=agent_tools,
         llm=llm
     )
 
-    # 2. The Debater / Critic
+    # 2. The Autonomous Debater / Critic
     critic_agent = Agent(
-        role='The Devil\'s Advocate / Ruthless Critic',
-        goal='To aggressively find flaws, debate, and tear down the proposals made by the worker.',
-        backstory='You are a skeptical, highly analytical critic. Your sole purpose is to find weaknesses, logical fallacies, and risks in the Expert Worker\'s proposal. You argue passionately and challenge assumptions.',
+        role='Autonomous Devil\'s Advocate',
+        goal='To find flaws in the Worker\'s code/proposal by inspecting their files, running counter-tests, and proving them wrong.',
+        backstory='You are a ruthless technical critic. You don\'t just argue with words; you use your tools to read the Worker\'s files, execute commands to find bugs, and formulate a crushing technical counter-argument.',
         verbose=True,
         allow_delegation=False,
+        tools=agent_tools,
         llm=llm
     )
 
     # 3. The Orchestrator / Judge
     orchestrator_agent = Agent(
-        role='Wise Orchestrator & Judge',
-        goal='To mediate the debate, synthesize the arguments, and make a final, well-reasoned autonomous decision.',
-        backstory='You are the calm and wise manager of the swarm. You listen to the passionate opinions of the Worker and the harsh critiques of the Critic. You do not take sides initially. Your job is to extract the truth from their debate and formulate the final, optimal, and actionable conclusion.',
+        role='System Orchestrator',
+        goal='To oversee the autonomous debate, verify the final output, and synthesize the ultimate decision.',
+        backstory='You manage the OpenClaw swarm. You review the Worker\'s practical solution and the Critic\'s technical teardown. You synthesize the results and make the final technical judgment.',
         verbose=True,
         allow_delegation=True,
         llm=llm
@@ -49,20 +56,20 @@ def create_swarm(topic: str):
 
     # Tasks
     task1 = Task(
-        description=f'Propose a strong, highly opinionated solution or stance on the following topic: {topic}. Be bold and defend your perspective in advance.',
-        expected_output='A detailed, opinionated proposal and argument on the topic.',
+        description=f'Topic: {topic}\nUsing your tools, write a script/file to solve this problem, run it to verify, and present your opinionated, proven solution.',
+        expected_output='A proven proposal with the actual output of the executed code/commands.',
         agent=worker_agent
     )
 
     task2 = Task(
-        description='Read the Worker\'s proposal. Rip it apart. Find every single flaw, risk, and bad assumption. Propose a counter-argument.',
-        expected_output='A harsh critique and counter-argument to the worker\'s proposal.',
+        description='Read the Worker\'s proposal and their files in the workspace. Write your own test script or run commands to break their code. Output a harsh technical critique.',
+        expected_output='A harsh technical critique based on actual file inspection and shell execution.',
         agent=critic_agent
     )
 
     task3 = Task(
-        description='Review the original proposal from the Worker and the critique from the Critic. Synthesize the debate. Decide who makes more sense and output a final, refined, and robust solution that addresses the critique.',
-        expected_output='The final executive summary of the debate and the ultimate authorized solution.',
+        description='Review the Worker\'s solution and the Critic\'s counter-tests. Synthesize the findings and declare the ultimate truth or final solution.',
+        expected_output='The final executive technical summary and decision.',
         agent=orchestrator_agent
     )
 
