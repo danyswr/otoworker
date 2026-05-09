@@ -1,9 +1,10 @@
 export class SpriteLoader {
-  static officeImage: HTMLImageElement | null = null;
-  static wallImage: HTMLImageElement | null = null;
-  static deskImage: HTMLImageElement | null = null;
-  static meetingTableImage: HTMLImageElement | null = null;
-  static characters: (HTMLImageElement | null)[] = Array(6).fill(null);
+  static officeImage: any = null;
+  static wallImage: any = null;
+  static deskImage: any = null;
+  static meetingTableImage: any = null;
+  static ironCabinetImage: any = null;
+  static characters: any[] = Array(6).fill(null);
 
   static async loadSheets(): Promise<void> {
     const loadImage = (src: string): Promise<HTMLImageElement> => {
@@ -37,6 +38,12 @@ export class SpriteLoader {
       this.meetingTableImage = await loadImage('/meeting_table.png');
     } catch {
       console.warn("Could not load /meeting_table.png");
+    }
+
+    try {
+      this.ironCabinetImage = await loadImage('/iron cabinet.png');
+    } catch {
+      console.warn("Could not load /iron cabinet.png");
     }
 
     for (let i = 0; i < 6; i++) {

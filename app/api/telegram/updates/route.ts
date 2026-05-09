@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 
 export const dynamic = 'force-dynamic';
 
-const BOT_TOKEN = "8681622018:AAGro-cOuMCBTWK41Z2OZdPHaGzgCQ_ElWk";
+const BOT_TOKEN = process.env.TELEGRAM_TOKEN || "8681622018:AAGro-cOuMCBTWK41Z2OZdPHaGzgCQ_ElWk";
 
 export async function POST(req: Request) {
   try {

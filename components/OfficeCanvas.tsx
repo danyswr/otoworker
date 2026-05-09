@@ -20,9 +20,10 @@ export interface GameState {
 interface OfficeCanvasProps {
   gameStateData: GameState;
   onSelectAgent: (id: string | null) => void;
+  onCabinetClick?: () => void;
 }
 
-export function OfficeCanvas({ gameStateData, onSelectAgent }: OfficeCanvasProps) {
+export function OfficeCanvas({ gameStateData, onSelectAgent, onCabinetClick }: OfficeCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const engineRef = useRef<{ loop: GameLoop; renderer: Renderer } | null>(null);
@@ -56,6 +57,23 @@ export function OfficeCanvas({ gameStateData, onSelectAgent }: OfficeCanvasProps
       gameStateData.characters.forEach(char => {
         char.update(dt);
         
+        // Environment Awareness: Detect nearby points of interest
+        char.nearbyPOI = null;
+        const distToServer = Math.sqrt(Math.pow(char.x - gameStateData.serverRoomPoint.x, 2) + Math.pow(char.y - gameStateData.serverRoomPoint.y, 2));
+        if (distToServer < 3) {
+            char.nearbyPOI = "server";
+        } else {
+            const nearDesk = gameStateData.desks.find(d => Math.sqrt(Math.pow(char.x - d.x, 2) + Math.pow(char.y - d.y, 2)) < 1.5);
+            if (nearDesk) {
+                char.nearbyPOI = "desk";
+            } else {
+                const distToMeeting = Math.sqrt(Math.pow(char.x - gameStateData.meetingTableRoomPoint.x, 2) + Math.pow(char.y - gameStateData.meetingTableRoomPoint.y, 2));
+                if (distToMeeting < 4) {
+                    char.nearbyPOI = "meeting";
+                }
+            }
+        }
+
         char.chatMessage = false; // reset chat by default
         if (char.chatTimer > -10) {
           char.chatTimer -= dt;
@@ -171,6 +189,38 @@ export function OfficeCanvas({ gameStateData, onSelectAgent }: OfficeCanvasProps
          renderer.drawText("SERVER ROOM", (gameStateData.serverRoomPoint.x + 1.5) * TILE_SIZE, (gameStateData.serverRoomPoint.y - 0.5) * TILE_SIZE, "rgba(255, 255, 255, 0.1)", "bold 20px monospace");
       }
 
+      // Iron Cabinet
+      const icImg = SpriteLoader.ironCabinetImage;
+      const icX = -0.05; 
+      const icY = 0.55;
+      
+      const drawW = TILE_SIZE * 3.15;
+      const drawH = TILE_SIZE * 3.15;
+
+      const mx = lastMousePos.current.x - (canvasRef.current?.width || 0) / 2;
+      const my = lastMousePos.current.y - (canvasRef.current?.height || 0) / 2;
+      const wx = mx / cameraRef.current.zoom + cameraRef.current.x;
+      const wy = my / cameraRef.current.zoom + cameraRef.current.y;
+      
+      const isCabinetHovered = wx >= icX * TILE_SIZE && wx <= icX * TILE_SIZE + drawW &&
+                               wy >= icY * TILE_SIZE && wy <= icY * TILE_SIZE + drawH;
+
+      if (icImg) {
+        renderables.push({
+          y: Math.max(icY + 3.8, 5.0),
+          draw: () => {
+             if (isCabinetHovered) {
+               renderer.ctx.save();
+               renderer.ctx.filter = "brightness(1.25)";
+               renderer.drawImage(icImg, 0, 0, icImg.width, icImg.height, icX * TILE_SIZE, icY * TILE_SIZE, drawW, drawH);
+               renderer.ctx.restore();
+             } else {
+               renderer.drawImage(icImg, 0, 0, icImg.width, icImg.height, icX * TILE_SIZE, icY * TILE_SIZE, drawW, drawH);
+             }
+          }
+        });
+      }
+
       // Desks
       for (const desk of gameStateData.desks) {
         const deskImg = SpriteLoader.deskImage;
@@ -257,18 +307,25 @@ export function OfficeCanvas({ gameStateData, onSelectAgent }: OfficeCanvasProps
 
   // Handle Resize
   useEffect(() => {
-    const handleResize = () => {
-      if (!containerRef.current || !canvasRef.current || !engineRef.current) return;
-      const w = containerRef.current.clientWidth;
-      const h = containerRef.current.clientHeight;
-      canvasRef.current.width = w;
-      canvasRef.current.height = h;
-      engineRef.current.renderer.resize(w, h);
-    };
+    if (!containerRef.current) return;
 
-    handleResize();
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
+    const resizeObserver = new ResizeObserver(() => {
+      window.requestAnimationFrame(() => {
+        if (!containerRef.current || !canvasRef.current || !engineRef.current) return;
+        const w = containerRef.current.clientWidth;
+        const h = containerRef.current.clientHeight;
+        
+        // Only update if dimensions actually changed to avoid redundant work
+        if (canvasRef.current.width !== w || canvasRef.current.height !== h) {
+          canvasRef.current.width = w;
+          canvasRef.current.height = h;
+          engineRef.current.renderer.resize(w, h);
+        }
+      });
+    });
+
+    resizeObserver.observe(containerRef.current);
+    return () => resizeObserver.disconnect();
   }, []);
 
   // Make sure selection change is synchronized with ref/loop if changed externally
@@ -293,6 +350,19 @@ export function OfficeCanvas({ gameStateData, onSelectAgent }: OfficeCanvasProps
     // world = (screen - center) / zoom + camera
     const wx = (mx - w / 2) / cameraRef.current.zoom + cameraRef.current.x;
     const wy = (my - h / 2) / cameraRef.current.zoom + cameraRef.current.y;
+
+    // Check Cabinet Click
+    const icX = -0.05; 
+    const icY = 0.55; // Match rendering
+    const drawW = TILE_SIZE * 3.15;
+    const drawH = TILE_SIZE * 3.15;
+    const isCabinetClicked = wx >= icX * TILE_SIZE && wx <= icX * TILE_SIZE + drawW &&
+                             wy >= icY * TILE_SIZE && wy <= icY * TILE_SIZE + drawH;
+                             
+    if (isCabinetClicked && onCabinetClick) {
+      onCabinetClick();
+      return;
+    }
 
     let clickedAgentId = null;
     for (const char of gameStateData.characters) {
@@ -350,7 +420,26 @@ export function OfficeCanvas({ gameStateData, onSelectAgent }: OfficeCanvasProps
         return;
     }
 
+    const icX = -0.05; 
+    const icY = 0.55;
+    const drawW = TILE_SIZE * 3.15;
+    const drawH = TILE_SIZE * 3.15;
+    const isCabinetHovered = wx >= icX * TILE_SIZE && wx <= icX * TILE_SIZE + drawW &&
+                             wy >= icY * TILE_SIZE && wy <= icY * TILE_SIZE + drawH;
+                             
+    if (containerRef.current) {
+      if (hoveredId || isCabinetHovered) {
+        containerRef.current.style.cursor = 'pointer';
+      } else {
+        containerRef.current.style.cursor = 'grab';
+      }
+    }
+
     if (!isDragging.current) return;
+    
+    if (containerRef.current) {
+      containerRef.current.style.cursor = 'grabbing';
+    }
 
     const dx = e.clientX - lastMousePos.current.x;
     const dy = e.clientY - lastMousePos.current.y;
@@ -415,7 +504,7 @@ export function OfficeCanvas({ gameStateData, onSelectAgent }: OfficeCanvasProps
   return (
     <div 
       ref={containerRef} 
-      className="flex-1 relative bg-[#08080a] flex items-center justify-center overflow-hidden touch-none cursor-move"
+      className="flex-1 relative bg-[#08080a] flex items-center justify-center overflow-hidden touch-none"
       onPointerDown={handlePointerDown}
       onPointerMove={handlePointerMove}
       onPointerUp={handlePointerUp}

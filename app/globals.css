@@ -9,16 +9,62 @@
     background: #0c0c0e;
   }
   ::-webkit-scrollbar-thumb {
-    background: #1f1f23;
+    background: #22252a;
     border-radius: 3px;
   }
   ::-webkit-scrollbar-thumb:hover {
-    background: #2a2a2f;
+    background: #33363e;
   }
   
-  /* Fix for Firefox */
   * {
     scrollbar-width: thin;
-    scrollbar-color: #1f1f23 #0c0c0e;
+    scrollbar-color: #22252a #0c0c0e;
+  }
+
+  body {
+    @apply antialiased;
+    background-image: 
+      radial-gradient(circle at 50% 50%, rgba(59, 130, 246, 0.03) 0%, transparent 50%),
+      linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+    background-size: 100% 100%, 40px 40px, 40px 40px;
+    background-attachment: fixed;
+  }
+}
+
+@layer utilities {
+  .glass-panel {
+    @apply bg-[#0c0e12]/80 backdrop-blur-2xl border border-white/10 shadow-[0_30px_60px_rgba(0,0,0,0.6)];
+  }
+  
+  .glass-card {
+    @apply bg-white/[0.02] backdrop-blur-md border border-white/5 hover:bg-white/[0.04] hover:border-white/10 transition-all duration-300;
+  }
+  
+  .tech-border {
+    @apply border border-white/5 relative;
+  }
+  
+  .glow-blue {
+    @apply shadow-[0_0_20px_rgba(59,130,246,0.2)];
+  }
+
+  .glow-green {
+    @apply shadow-[0_0_15px_rgba(34,197,94,0.3)];
+  }
+  
+  .text-glow {
+    text-shadow: 0 0 15px currentColor;
+  }
+
+  .grid-bg {
+    background-image: 
+      linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+    background-size: 20px 20px;
+  }
+
+  .font-display {
+    font-family: var(--font-display), system-ui;
   }
 }

@@ -44,11 +44,11 @@ export class Renderer {
     this.ctx.strokeRect(x, y, w, h);
   }
 
-  drawImage(img: CanvasImageSource, sx: number, sy: number, sw: number, sh: number, dx: number, dy: number, dw: number, dh: number) {
+  drawImage(img: any, sx: number, sy: number, sw: number, sh: number, dx: number, dy: number, dw: number, dh: number) {
     this.ctx.drawImage(img, sx, sy, sw, sh, dx, dy, dw, dh);
   }
 
-  drawFlippedImage(img: CanvasImageSource, sx: number, sy: number, sw: number, sh: number, dx: number, dy: number, dw: number, dh: number) {
+  drawFlippedImage(img: any, sx: number, sy: number, sw: number, sh: number, dx: number, dy: number, dw: number, dh: number) {
     this.ctx.save();
     this.ctx.translate(dx + dw, dy);
     this.ctx.scale(-1, 1);

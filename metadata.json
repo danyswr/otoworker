@@ -1,6 +1,6 @@
 {
-  "name": "AuWorker",
-  "description": "2D Virtual Office with Autonomous Agents",
+  "name": "NEURAL_GRID: Agent_HUD",
+  "description": "Advanced multi-agent simulation command center with cognitive monitoring, tactical relay, and autonomous worker management.",
   "requestFramePermissions": [],
   "majorCapabilities": []
 }

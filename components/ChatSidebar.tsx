@@ -1,183 +1,1574 @@
-'use client';
+"use client";
 
-import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'motion/react';
-import { Character, CharacterState } from '@/lib/office/worker/api/Character';
+import React, { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Character, CharacterState } from "@/lib/office/worker/api/Character";
+import {
+  X,
+  ChevronRight,
+  ChevronLeft,
+  User,
+  Brain,
+  Radio,
+  Dna,
+  Zap,
+  Send,
+  Settings2,
+  Trash2,
+  Activity,
+  Target,
+  AlertTriangle,
+  Terminal,
+} from "lucide-react";
 
 interface Message {
-  role: 'user' | 'agent';
+  role: "user" | "agent" | "system";
   content: string;
 }
 
 interface ChatSidebarProps {
   agent: Character | null;
+  allAgents?: Character[];
   onClose: () => void;
-  onAssignTask: (task: string) => void;
+  onAssignTask: (task: string, priority: "high" | "medium" | "low") => void;
   messages: Message[];
   isLoading: boolean;
 }
 
-export function ChatSidebar({ agent, onClose, onAssignTask, messages, isLoading }: ChatSidebarProps) {
-  const [input, setInput] = useState('');
+export function ChatSidebar({
+  agent,
+  allAgents = [],
+  onClose,
+  onAssignTask,
+  messages,
+  isLoading,
+}: ChatSidebarProps) {
+  const [activeTab, setActiveTab] = useState<"chat" | "profile" | "core">(
+    "chat",
+  );
+  const [input, setInput] = useState("");
+  const [priority, setPriority] = useState<"high" | "medium" | "low">("medium");
   const [isMinimized, setIsMinimized] = useState(false);
+  const [isEditingProfile, setIsEditingProfile] = useState(false);
+  const [showTerminateConfirm, setShowTerminateConfirm] = useState(false);
+  const [editData, setEditData] = useState({
+    name: "",
+    profession: "",
+    mbti: "",
+    stance: "",
+    bio: "",
+    temperature: 0.7,
+    topP: 0.9,
+    topK: 40,
+  });
+  const [goalOverrideInput, setGoalOverrideInput] = useState("");
+  const [isOverridingGoal, setIsOverridingGoal] = useState(false);
+  const [isEditingNetwork, setIsEditingNetwork] = useState(false);
+  const [networkTargetName, setNetworkTargetName] = useState("");
+  const [networkAffinity, setNetworkAffinity] = useState(0);
+  const [networkNotes, setNetworkNotes] = useState("");
+  const [memorySearch, setMemorySearch] = useState("");
+  const [memoryFilter, setMemoryFilter] = useState<
+    "all" | "interaction" | "fact" | "outcome"
+  >("all");
+
+  // Reset form when agent changes
+  useEffect(() => {
+    if (agent) {
+      setEditData({
+        name: agent.name,
+        profession: agent.profession,
+        mbti: agent.mbti,
+        stance: agent.stance,
+        bio: agent.bio,
+        temperature: agent.aiConfig?.temperature ?? 0.7,
+        topP: agent.aiConfig?.topP ?? 0.9,
+        topK: agent.aiConfig?.topK ?? 40,
+      });
+      setIsEditingProfile(false);
+      setGoalOverrideInput(agent.currentGoal || "");
+      setIsOverridingGoal(false);
+    }
+  }, [agent]);
+
+  const handleGoalOverride = () => {
+    if (agent && goalOverrideInput.trim()) {
+      const oldGoal = agent.currentGoal;
+      agent.currentGoal = goalOverrideInput.trim();
+      window.dispatchEvent(new CustomEvent("forceUpdateUi"));
+      window.dispatchEvent(
+        new CustomEvent("addCabinetLog", {
+          detail: `[ADMIN_OVERRIDE]: ${agent.name}'s priority directive modified by Command Center. PREVIOUS: "${oldGoal || "NONE"}" NEW: "${agent.currentGoal}"`,
+        }),
+      );
+      setIsOverridingGoal(false);
+    }
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!input.trim() || isLoading) return;
-    onAssignTask(input.trim());
-    setInput('');
+    onAssignTask(input.trim(), priority);
+    setInput("");
+  };
+
+  const saveProfile = () => {
+    if (agent) {
+      agent.name = editData.name;
+      agent.profession = editData.profession;
+      agent.mbti = editData.mbti;
+      agent.stance = editData.stance;
+      agent.bio = editData.bio;
+      if (!agent.aiConfig)
+        agent.aiConfig = {
+          temperature: 0.7,
+          topP: 0.9,
+          topK: 40,
+          model: "gemini-3-flash-preview",
+        };
+      agent.aiConfig.temperature = editData.temperature;
+      agent.aiConfig.topP = editData.topP;
+      agent.aiConfig.topK = editData.topK;
+      setIsEditingProfile(false);
+      window.dispatchEvent(new CustomEvent("forceUpdateUi"));
+    }
+  };
+
+  const handleTerminate = () => {
+    if (agent) {
+      const event = new CustomEvent("fireWorker");
+      window.dispatchEvent(event);
+      setShowTerminateConfirm(false);
+      onClose();
+    }
+  };
+
+  const handleSaveNetworkNode = () => {
+    if (agent && networkTargetName) {
+      if (!agent.relationships) {
+        agent.relationships = {};
+      }
+      if (!agent.relationships[networkTargetName]) {
+        agent.relationships[networkTargetName] = {
+          affinity: networkAffinity,
+          notes: networkNotes,
+        };
+      } else {
+        agent.relationships[networkTargetName].affinity = networkAffinity;
+        agent.relationships[networkTargetName].notes = networkNotes;
+      }
+      setIsEditingNetwork(false);
+      setNetworkTargetName("");
+      setNetworkAffinity(0);
+      setNetworkNotes("");
+      window.dispatchEvent(new CustomEvent("forceUpdateUi"));
+    }
+  };
+
+  const tabs = [
+    { id: "chat", label: "Link", icon: <Radio size={14} /> },
+    { id: "profile", label: "Intel", icon: <User size={14} /> },
+    { id: "core", label: "Core", icon: <Brain size={14} /> },
+  ] as const;
+
+  const sidebarVariants = {
+    hidden: { x: 400, opacity: 0 },
+    visible: {
+      x: 0,
+      opacity: 1,
+      transition: {
+        type: "spring",
+        stiffness: 300,
+        damping: 30,
+      },
+    },
+    exit: { x: 400, opacity: 0 },
   };
 
   return (
-    <AnimatePresence>
-      <motion.div
-        initial={{ x: isMinimized ? 340 : 380, opacity: 0 }}
-        animate={{ 
-          x: isMinimized ? 340 : 0, 
-          opacity: 1,
-          width: isMinimized ? 380 : 380 
-        }}
-        transition={{ type: 'tween', duration: 0.12, ease: 'easeOut' }}
-        exit={{ x: 380, opacity: 0 }}
-        className="fixed right-0 top-0 h-full border-l border-white/10 bg-[#0c0c0e] flex flex-row font-mono text-[#e0e0e0] z-[100] shadow-2xl transition-all"
-      >
-        {/* Toggle Button Column */}
-        <button 
-          onClick={() => setIsMinimized(!isMinimized)}
-          className="w-10 bg-[#141416] hover:bg-[#1a1a1c] border-r border-white/5 flex flex-col items-center justify-center gap-4 group shrink-0"
-        >
-          <div className="text-white/20 group-hover:text-white/60 text-xs font-bold [writing-mode:vertical-lr] rotate-180 tracking-[0.3em] uppercase">
-            {isMinimized ? 'Expand Link' : 'Collapse Link'}
-          </div>
-          <div className="text-blue-500 text-lg">{isMinimized ? '«' : '»'}</div>
-        </button>
-
-        <div className="w-[340px] flex flex-col h-full overflow-hidden">
-          
-          {!agent ? (
-             <div className="flex-1 flex flex-col items-center justify-center p-10 text-center opacity-20">
-                <div className="w-12 h-12 border border-white/20 rounded-full flex items-center justify-center mb-4 text-xl">?</div>
-                <div className="text-[10px] uppercase tracking-[0.2em] leading-relaxed">
-                  No active worker signal detected.<br/>Select a unit to establish link.
-                </div>
-             </div>
-          ) : (
-            <>
-              {/* Section 1: Profile */}
-              <div className="bg-[#141416] border-b border-white/10 flex flex-col shrink-0">
-            <div className="p-4 border-b border-white/5 flex justify-between items-center">
-              <h2 className="text-[10px] uppercase text-white/40 tracking-widest font-bold">Worker Unit Profile</h2>
-              <button onClick={onClose} className="text-white/40 hover:text-white flex items-center gap-1 text-[10px] uppercase">
-                <span>Deselect</span>
-                <span className="text-sm">✕</span>
-              </button>
-            </div>
-            
-            <div className="p-4 flex items-center gap-4">
-               <div className="w-20 h-20 bg-black border border-white/10 shrink-0 overflow-hidden relative shadow-inner flex items-center justify-center">
-                  <div 
-                    className="w-full h-full aspect-square"
-                    style={{
-                      backgroundImage: `url(/char_${agent.spriteIndex}.png)`,
-                      backgroundPosition: '16.666% 0%',
-                      backgroundSize: '700% 300%',
-                      backgroundRepeat: 'no-repeat',
-                      imageRendering: 'pixelated'
-                    }} 
-                  />
-               </div>
-               
-               <div className="flex-1">
-                 <div className="text-lg font-bold uppercase tracking-widest leading-tight">{agent.name}</div>
-                 <div className="flex items-center gap-2 mt-1 mb-2">
-                   <div className={`w-1.5 h-1.5 rounded-full ${agent.state === CharacterState.WORK ? 'bg-green-500 animate-pulse' : 'bg-blue-500'}`}></div>
-                   <span className="text-[9px] uppercase tracking-tighter text-white/60">{agent.state}</span>
-                 </div>
-                 
-                 <div className="flex gap-2">
-                    <div className="text-[8px] bg-white/5 px-1.5 py-0.5 border border-white/5">SPD: 4.0</div>
-                    <div className="text-[8px] bg-white/5 px-1.5 py-0.5 border border-white/5">TSK: {messages.length / 2}</div>
-                 </div>
-               </div>
-            </div>
-          </div>
-
-          {/* Section 2: Chat / Console */}
-          <div className="flex-1 flex flex-col min-h-0 bg-black/40">
-            <div className="p-3 bg-black/60 border-b border-white/10 flex items-center gap-2">
-               <div className="w-1.5 h-1.5 bg-blue-500/50 rounded-full"></div>
-               <span className="text-[9px] uppercase text-white/40 font-bold tracking-widest">Neural Link Intercom</span>
-            </div>
-
-            <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-4">
-              {messages.length === 0 ? (
-                <div className="m-auto text-center py-10 opacity-20">
-                  <div className="text-[9px] uppercase tracking-[0.2em] mb-2 leading-relaxed">
-                    Standby for instructions...
-                  </div>
-                </div>
-              ) : (
-                messages.map((m, i) => (
-                  <div key={i} className="text-xs">
-                    {m.role === 'user' ? (
-                      <div className="flex flex-col items-end">
-                        <div className="p-2 bg-blue-500/10 border-r-2 border-blue-500 text-blue-100 font-sans leading-relaxed text-[11px] mb-1">{m.content}</div>
-                      </div>
-                    ) : (
-                      <div className="flex flex-col items-start">
-                        <div className="p-2 bg-white/5 border border-white/10 text-white/80 font-sans leading-relaxed text-[11px] mb-1">{m.content}</div>
-                      </div>
-                    )}
-                  </div>
-                ))
-              )}
-              {isLoading && (
-                <div className="p-2 bg-yellow-500/5 border border-yellow-500/20 text-yellow-500/80 text-[10px] font-bold animate-pulse uppercase tracking-widest italic">
-                  &gt; Computing trajectory...
-                </div>
-              )}
-            </div>
-
-            {/* Input */}
-            <form onSubmit={handleSubmit} className="p-3 bg-[#141416] border-t border-white/10">
-              <div className="flex flex-col gap-2">
-                <textarea
-                  className="w-full bg-black border border-white/10 p-2 text-[11px] h-20 focus:outline-none focus:border-blue-500/50 text-[#e0e0e0] font-mono resize-none"
-                  placeholder="Input task parameters..."
-                  value={input}
-                  onChange={e => setInput(e.target.value)}
-                  disabled={isLoading || agent.state === CharacterState.WORK}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' && !e.shiftKey) {
-                      e.preventDefault();
-                      handleSubmit(e);
-                    }
+    <>
+      <AnimatePresence>
+        {isMinimized && agent && (
+          <motion.button
+            key="minimized-toggle"
+            initial={{ x: 100, opacity: 0 }}
+            animate={{ x: 0, opacity: 1 }}
+            exit={{ x: 100, opacity: 0 }}
+            onClick={() => setIsMinimized(false)}
+            className="fixed right-0 top-10 z-[100] bg-[#09090b]/90 border border-slate-800 border-r-0 rounded-l-xl p-3 pl-4 text-slate-300 hover:text-white backdrop-blur-xl shadow-2xl transition-colors group flex items-center gap-4 cursor-pointer"
+          >
+            <ChevronLeft
+              size={16}
+              className="group-hover:-translate-x-1 transition-transform text-slate-500"
+            />
+            <div className="flex items-center gap-3 border-l border-white/10 pl-3">
+              <div className="flex flex-col items-end">
+                <span className="text-[10px] font-mono uppercase tracking-widest text-slate-500">
+                  Active Unit
+                </span>
+                <span className="text-xs font-bold font-sans text-white">
+                  {agent.name}
+                </span>
+              </div>
+              <div className="w-8 h-8 bg-black/40 border border-white/10 rounded-lg overflow-hidden relative shadow-inner flex items-center justify-center">
+                <div
+                  className="w-6 h-8 scale-[1.5]"
+                  style={{
+                    backgroundImage: `url(/char_${agent.spriteIndex}.png)`,
+                    backgroundPosition: "16.666% 0%",
+                    backgroundSize: "700% 300%",
+                    backgroundRepeat: "no-repeat",
+                    imageRendering: "pixelated",
                   }}
                 />
-                <button
-                  type="submit"
-                  disabled={!input.trim() || isLoading || agent.state === CharacterState.WORK}
-                  className="w-full py-2 bg-blue-600 hover:bg-blue-500 text-white text-[10px] font-bold tracking-widest uppercase transition-all disabled:opacity-30 flex items-center justify-center gap-2"
-                >
-                  📡 TRANSMIT COMMAND
-                </button>
+                <div
+                  className={`absolute bottom-0 right-0 w-2 h-2 rounded-full border border-[#09090b] ${agent?.state === CharacterState.WORK ? "bg-emerald-500" : agent?.state === CharacterState.IDLE ? "bg-slate-400" : "bg-blue-500"}`}
+                ></div>
               </div>
-            </form>
+            </div>
+          </motion.button>
+        )}
+      </AnimatePresence>
 
-            <button 
-              onClick={() => {
-                const event = new CustomEvent('fireWorker');
-                window.dispatchEvent(event);
-              }}
-              className="mt-2 p-2 text-[9px] text-red-500/40 hover:text-red-500 uppercase tracking-widest text-center transition-colors border-t border-white/5"
-            >
-              Terminate Unit Connection
-            </button>
-          </div>
-          </>
-          )}
-        </div>
-      </motion.div>
-    </AnimatePresence>
+      <AnimatePresence mode="wait">
+        {!isMinimized && !!agent && (
+          <motion.div
+            key="sidebar"
+            initial="hidden"
+            animate="visible"
+            exit="exit"
+            variants={sidebarVariants}
+            className="fixed right-4 top-4 bottom-4 w-[380px] bg-[#09090b]/95 backdrop-blur-3xl flex flex-col font-sans text-white z-[100] shadow-2xl rounded-3xl overflow-hidden border border-slate-800"
+          >
+            <div className="flex flex-col h-full overflow-hidden bg-transparent">
+              <>
+                {/* Profile Header */}
+                <div className="px-5 py-4 border-b border-white/5 relative overflow-hidden shrink-0 bg-white/[0.01] flex flex-col gap-4">
+                  <div className="flex justify-between items-start relative z-10">
+                    <div className="flex items-center gap-3">
+                      <div className="relative group">
+                        <div className="w-12 h-12 bg-[#0f1115] border border-white/10 rounded-[14px] overflow-hidden relative flex items-center justify-center z-10 transition-transform group-hover:scale-105 duration-300 shadow-sm">
+                          <div
+                            className="w-8 h-10 scale-[1.4]"
+                            style={{
+                              backgroundImage: `url(/char_${agent.spriteIndex}.png)`,
+                              backgroundPosition: "16.666% 0%",
+                              backgroundSize: "700% 300%",
+                              backgroundRepeat: "no-repeat",
+                              imageRendering: "pixelated",
+                            }}
+                          />
+                        </div>
+                        <div
+                          className={`absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full border-[2.5px] border-[#0f1115] z-20 ${agent?.state === CharacterState.WORK ? "bg-emerald-400" : agent?.state === CharacterState.IDLE ? "bg-slate-400" : "bg-indigo-400"}`}
+                        ></div>
+                      </div>
+                      <div className="flex flex-col">
+                        <h2 className="text-[15px] font-semibold tracking-tight text-white leading-none mb-1">
+                          {agent.name}
+                        </h2>
+                        <div className="flex items-center gap-2">
+                          <span className="text-[12px] text-slate-400 capitalize">
+                            {agent.profession}
+                          </span>
+                          <span className="w-1 h-1 rounded-full bg-slate-700"></span>
+                          <span
+                            className={`text-[11px] font-medium capitalize ${agent?.state === CharacterState.WORK ? "text-emerald-400" : "text-slate-500"}`}
+                          >
+                            {agent.state}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <button
+                        onClick={() => setShowTerminateConfirm(true)}
+                        className="p-1.5 text-red-400 hover:text-white hover:bg-red-500/80 rounded-lg transition-all"
+                        title="Fire Worker"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                      <button
+                        onClick={() => setIsMinimized(true)}
+                        className="p-1.5 text-slate-400 hover:text-white hover:bg-slate-800/80 rounded-lg transition-all"
+                        title="Minimize"
+                      >
+                        <ChevronRight size={16} />
+                      </button>
+                      <button
+                        onClick={onClose}
+                        className="p-1.5 text-slate-400 hover:text-white hover:bg-slate-800/80 rounded-lg transition-all"
+                        title="Close"
+                      >
+                        <X size={16} />
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Navigation Segmented Control */}
+                  <div className="flex p-1 bg-[#090b0f] rounded-xl border border-white/5 shadow-inner">
+                    {tabs.map((tab) => (
+                      <button
+                        key={tab.id}
+                        onClick={() => setActiveTab(tab.id as any)}
+                        className={`flex-1 py-1.5 rounded-lg flex items-center justify-center gap-2 transition-all duration-200 ${
+                          activeTab === tab.id
+                            ? "bg-slate-800/80 text-white shadow-sm ring-1 ring-white/10"
+                            : "text-slate-400 hover:text-white hover:bg-slate-800/30"
+                        }`}
+                      >
+                        <div
+                          className={
+                            activeTab === tab.id ? "text-indigo-400" : ""
+                          }
+                        >
+                          {tab.icon}
+                        </div>
+                        <span className="text-[12px] font-medium">
+                          {tab.label}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Main Tab View */}
+                <div className="flex-1 flex flex-col min-h-0 bg-transparent relative">
+                  {/* Terminate Confirmation Overlay */}
+                  <AnimatePresence>
+                    {showTerminateConfirm && (
+                      <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="absolute inset-0 z-50 bg-[#0a0c10]/95 backdrop-blur-md p-8 flex flex-col items-center justify-center text-center"
+                      >
+                        <motion.div
+                          initial={{ scale: 0.9, opacity: 0, y: 20 }}
+                          animate={{ scale: 1, opacity: 1, y: 0 }}
+                          exit={{ scale: 0.9, opacity: 0, y: 20 }}
+                          className="w-full max-w-xs space-y-8"
+                        >
+                          <div className="flex flex-col items-center gap-4">
+                            <div className="w-16 h-16 rounded-full bg-red-500/10 border border-red-500/20 flex items-center justify-center text-red-500 shadow-[0_0_30px_rgba(239,68,68,0.2)]">
+                              <AlertTriangle size={32} />
+                            </div>
+                            <div>
+                              <h3 className="text-lg font-display text-white uppercase tracking-[0.2em] mb-2 font-bold">
+                                Terminate_Employment
+                              </h3>
+                              <p className="text-[11px] font-mono text-white/40 leading-relaxed uppercase tracking-widest">
+                                Permanently fire{" "}
+                                <span className="text-red-400 font-bold">
+                                  {agent?.name}
+                                </span>
+                                ? This action is irreversible.
+                              </p>
+                            </div>
+                          </div>
+
+                          <div className="flex flex-col gap-3">
+                            <button
+                              onClick={handleTerminate}
+                              className="w-full py-4 bg-red-600 hover:bg-red-500 text-white rounded-2xl font-mono text-[10px] font-bold uppercase tracking-[0.3em] transition-all shadow-[0_10px_30px_rgba(220,38,38,0.2)] active:scale-95 border border-white/10"
+                            >
+                              Confirm_Firing
+                            </button>
+                            <button
+                              onClick={() => setShowTerminateConfirm(false)}
+                              className="w-full py-4 bg-white/5 hover:bg-white/10 text-white/60 rounded-2xl font-mono text-[10px] uppercase tracking-[0.3em] transition-all border border-white/5"
+                            >
+                              Abort_Command
+                            </button>
+                          </div>
+                        </motion.div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+
+                  <AnimatePresence mode="wait">
+                    {activeTab === "profile" && (
+                      <motion.div
+                        key="profile"
+                        initial={{ opacity: 0, scale: 0.98 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.98 }}
+                        transition={{ duration: 0.2 }}
+                        className="flex-1 overflow-y-auto scrollbar-thin p-5 flex flex-col gap-6"
+                      >
+                        {isEditingProfile ? (
+                          <div className="flex flex-col gap-5">
+                            <div className="space-y-4">
+                              {[
+                                { label: "Identifier", key: "name" },
+                                { label: "Role", key: "profession" },
+                                { label: "Logic_Type", key: "mbti" },
+                                { label: "Priority_Stance", key: "stance" },
+                              ].map((field) => (
+                                <div key={field.key} className="space-y-1.5">
+                                  <label className="text-[10px] font-medium text-slate-400 pl-1">
+                                    {field.label}
+                                  </label>
+                                  <input
+                                    type="text"
+                                    value={(editData as any)[field.key]}
+                                    onChange={(e) =>
+                                      setEditData({
+                                        ...editData,
+                                        [field.key]: e.target.value,
+                                      })
+                                    }
+                                    className="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2.5 text-xs text-white focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/30 outline-none transition-all placeholder:text-slate-600 shadow-inner"
+                                  />
+                                </div>
+                              ))}
+                            </div>
+
+                            <div className="space-y-1.5">
+                              <label className="text-[10px] font-medium text-slate-400 capitalize pl-1">
+                                Neural Background
+                              </label>
+                              <textarea
+                                value={editData.bio}
+                                onChange={(e) =>
+                                  setEditData({
+                                    ...editData,
+                                    bio: e.target.value,
+                                  })
+                                }
+                                className="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2.5 text-xs text-white h-24 resize-none focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/50 outline-none transition-all shadow-inner"
+                              />
+                            </div>
+
+                            <div className="space-y-4 pt-4 border-t border-white/10">
+                              <label className="text-[10px] font-medium text-slate-400 capitalize pl-1">
+                                AI Parameters
+                              </label>
+
+                              <div className="bg-black/40 border border-white/10 rounded-lg p-4 space-y-5">
+                                <div className="space-y-2">
+                                  <div className="flex justify-between text-[10px] text-slate-400">
+                                    <span>Creativity (Temp)</span>
+                                    <span className="text-white/90">
+                                      {editData.temperature.toFixed(2)}
+                                    </span>
+                                  </div>
+                                  <input
+                                    type="range"
+                                    min="0"
+                                    max="2"
+                                    step="0.05"
+                                    value={editData.temperature}
+                                    onChange={(e) =>
+                                      setEditData({
+                                        ...editData,
+                                        temperature: parseFloat(e.target.value),
+                                      })
+                                    }
+                                    className="w-full accent-blue-500 bg-white/10 h-1.5 rounded-lg appearance-none [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:bg-blue-500 [&::-webkit-slider-thumb]:shadow-[0_0_10px_rgba(59,130,246,0.8)] [&::-webkit-slider-thumb]:rounded-full cursor-pointer"
+                                  />
+                                </div>
+                                <div className="space-y-2">
+                                  <div className="flex justify-between text-[10px] text-slate-400">
+                                    <span>Nucleus (Top P)</span>
+                                    <span className="text-white/90">
+                                      {editData.topP.toFixed(2)}
+                                    </span>
+                                  </div>
+                                  <input
+                                    type="range"
+                                    min="0"
+                                    max="1"
+                                    step="0.05"
+                                    value={editData.topP}
+                                    onChange={(e) =>
+                                      setEditData({
+                                        ...editData,
+                                        topP: parseFloat(e.target.value),
+                                      })
+                                    }
+                                    className="w-full accent-blue-500 bg-white/10 h-1.5 rounded-lg appearance-none [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:bg-blue-500 [&::-webkit-slider-thumb]:shadow-[0_0_10px_rgba(59,130,246,0.8)] [&::-webkit-slider-thumb]:rounded-full cursor-pointer"
+                                  />
+                                </div>
+                                <div className="space-y-2">
+                                  <div className="flex justify-between text-[10px] text-slate-400">
+                                    <span>Top K</span>
+                                    <span className="text-white/90">
+                                      {editData.topK}
+                                    </span>
+                                  </div>
+                                  <input
+                                    type="range"
+                                    min="1"
+                                    max="100"
+                                    step="1"
+                                    value={editData.topK}
+                                    onChange={(e) =>
+                                      setEditData({
+                                        ...editData,
+                                        topK: parseInt(e.target.value),
+                                      })
+                                    }
+                                    className="w-full accent-blue-500 bg-white/10 h-1.5 rounded-lg appearance-none [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:bg-blue-500 [&::-webkit-slider-thumb]:shadow-[0_0_10px_rgba(59,130,246,0.8)] [&::-webkit-slider-thumb]:rounded-full cursor-pointer"
+                                  />
+                                </div>
+                              </div>
+                            </div>
+
+                            <div className="flex gap-2 pt-2">
+                              <button
+                                onClick={saveProfile}
+                                className="flex-1 bg-white text-black hover:bg-gray-200 font-semibold py-2.5 rounded-md transition-all active:scale-[0.98] text-[11px] shadow-sm"
+                              >
+                                Save Changes
+                              </button>
+                              <button
+                                onClick={() => setIsEditingProfile(false)}
+                                className="flex-1 bg-white/5 hover:bg-white/10 text-white py-2.5 rounded-md transition-all text-[11px] active:scale-[0.98] font-medium border border-white/5"
+                              >
+                                Cancel
+                              </button>
+                            </div>
+                          </div>
+                        ) : (
+                          <>
+                            <div className="flex justify-end -mb-4 relative z-10">
+                              <button
+                                onClick={() => setIsEditingProfile(true)}
+                                className="text-[10px] font-medium text-blue-400 hover:text-white px-3 py-1.5 bg-black/40 rounded-lg border border-white/10 transition-colors shadow-sm"
+                              >
+                                Edit Profile
+                              </button>
+                            </div>
+
+                            {/* Info Grid */}
+                            <div className="grid grid-cols-2 gap-px bg-white/5 rounded-2xl overflow-hidden border border-white/5 shadow-sm">
+                              {[
+                                {
+                                  label: "Identifier",
+                                  val: agent?.name || "Unknown",
+                                },
+                                {
+                                  label: "Function",
+                                  val: agent?.profession || "N/A",
+                                },
+                                {
+                                  label: "Logic_Class",
+                                  val: agent?.mbti || "N/A",
+                                },
+                                {
+                                  label: "Ethos_Stance",
+                                  val: agent?.stance || "N/A",
+                                },
+                                {
+                                  label: "AI_Model",
+                                  val: (
+                                    agent?.aiConfig?.model ||
+                                    "gemini-3-flash-preview"
+                                  ).replace("gemini-", ""),
+                                },
+                              ].map((item, i) => (
+                                <div
+                                  key={i}
+                                  className={`bg-[#02040a]/80 p-5 flex flex-col gap-1.5 ${item.label === "AI_Model" ? "col-span-2" : ""}`}
+                                >
+                                  <span className="text-[9px] font-mono text-white/40 uppercase tracking-widest">
+                                    {item.label}
+                                  </span>
+                                  <span className="text-xs font-bold text-white/90 uppercase tracking-wide truncate">
+                                    {item.val}
+                                  </span>
+                                </div>
+                              ))}
+                            </div>
+
+                            {/* Profile Bio */}
+                            <div className="bg-white/[0.02] border border-white/5 rounded-2xl p-5 shadow-sm relative group">
+                              <div className="absolute inset-0 bg-blue-500/5 opacity-0 group-hover:opacity-100 transition-opacity rounded-2xl pointer-events-none"></div>
+                              <p className="text-xs text-white/60 leading-relaxed font-sans italic relative z-10">
+                                {agent.bio ||
+                                  "Encrypted dossier. No background signal detected."}
+                              </p>
+                            </div>
+
+                            {/* Vital Signs */}
+                            <div className="space-y-4 pt-2">
+                              <div className="flex items-center gap-2 border-b border-white/10 pb-2">
+                                <Activity
+                                  size={12}
+                                  className="text-slate-500"
+                                />
+                                <span className="text-[10px] font-medium text-slate-400 capitalize tracking-wide">
+                                  Neural Vitals
+                                </span>
+                              </div>
+
+                              <div className="space-y-3.5">
+                                {[
+                                  {
+                                    label: "System_Integrity",
+                                    val: agent.health,
+                                    color: "bg-[#10B981]",
+                                  },
+                                  {
+                                    label: "Intelligence_Rating",
+                                    val: agent.intelligence,
+                                    color: "bg-indigo-500",
+                                  },
+                                ].map((stat, i) => (
+                                  <div key={i} className="space-y-1.5">
+                                    <div className="flex justify-between items-end text-[9px] font-mono tracking-widest">
+                                      <span className="text-white/40 uppercase">
+                                        {stat.label}
+                                      </span>
+                                      <span className="text-white/90 font-bold">
+                                        {Math.round(stat.val)}%
+                                      </span>
+                                    </div>
+                                    <div className="h-1.5 bg-black/40 rounded-full overflow-hidden border border-white/5">
+                                      <motion.div
+                                        initial={{ width: 0 }}
+                                        animate={{ width: `${stat.val}%` }}
+                                        className={`h-full ${stat.color} rounded-full shadow-[0_0_10px_rgba(255,255,255,0.2)]`}
+                                      ></motion.div>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+
+                            {/* AI Parameters Controls */}
+                            <div className="space-y-4 pt-2 border-t border-white/10 mt-6">
+                              <div className="flex items-center gap-2 border-b border-white/10 pb-2">
+                                <Settings2
+                                  size={12}
+                                  className="text-slate-500"
+                                />
+                                <span className="text-[10px] font-medium text-slate-400 capitalize tracking-wide">
+                                  AI Parameter Matrix
+                                </span>
+                                <span className="ml-auto text-[9px] font-mono text-indigo-400 bg-indigo-500/10 px-1.5 py-0.5 rounded border border-indigo-500/20 flex items-center gap-1.5 uppercase font-bold tracking-wider shadow-sm">
+                                  <Zap size={8} />
+                                  {agent.aiConfig?.model ||
+                                    "gemini-3-flash-preview"}
+                                </span>
+                              </div>
+                              <div className="space-y-5 bg-black/20 p-4 rounded-xl border border-white/5 shadow-inner hover:border-white/10 transition-colors">
+                                <div className="space-y-2">
+                                  <div className="flex justify-between text-[10px] text-slate-400 font-medium">
+                                    <span>Creativity (Temp)</span>
+                                    <span className="text-white/90 font-mono">
+                                      {(
+                                        agent.aiConfig?.temperature ?? 0.7
+                                      ).toFixed(2)}
+                                    </span>
+                                  </div>
+                                  <input
+                                    type="range"
+                                    min="0"
+                                    max="2"
+                                    step="0.05"
+                                    value={agent.aiConfig?.temperature ?? 0.7}
+                                    onChange={(e) => {
+                                      if (!agent.aiConfig)
+                                        agent.aiConfig = {
+                                          temperature: 0.7,
+                                          topP: 0.9,
+                                          topK: 40,
+                                          model: "gemini-3-flash-preview",
+                                        };
+                                      agent.aiConfig.temperature = parseFloat(
+                                        e.target.value,
+                                      );
+                                      window.dispatchEvent(
+                                        new CustomEvent("forceUpdateUi"),
+                                      );
+                                    }}
+                                    className="w-full accent-indigo-500 bg-white/10 h-1.5 rounded-lg appearance-none [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3.5 [&::-webkit-slider-thumb]:h-3.5 [&::-webkit-slider-thumb]:bg-indigo-500 [&::-webkit-slider-thumb]:shadow-[0_0_12px_rgba(99,102,241,0.9)] [&::-webkit-slider-thumb]:rounded-full cursor-pointer hover:[&::-webkit-slider-thumb]:scale-110 active:[&::-webkit-slider-thumb]:scale-90 transition-all"
+                                  />
+                                </div>
+                                <div className="space-y-2">
+                                  <div className="flex justify-between text-[10px] text-slate-400 font-medium">
+                                    <span>Nucleus Sampling (Top P)</span>
+                                    <span className="text-white/90 font-mono">
+                                      {(agent.aiConfig?.topP ?? 0.9).toFixed(2)}
+                                    </span>
+                                  </div>
+                                  <input
+                                    type="range"
+                                    min="0"
+                                    max="1"
+                                    step="0.05"
+                                    value={agent.aiConfig?.topP ?? 0.9}
+                                    onChange={(e) => {
+                                      if (!agent.aiConfig)
+                                        agent.aiConfig = {
+                                          temperature: 0.7,
+                                          topP: 0.9,
+                                          topK: 40,
+                                          model: "gemini-3-flash-preview",
+                                        };
+                                      agent.aiConfig.topP = parseFloat(
+                                        e.target.value,
+                                      );
+                                      window.dispatchEvent(
+                                        new CustomEvent("forceUpdateUi"),
+                                      );
+                                    }}
+                                    className="w-full accent-indigo-500 bg-white/10 h-1.5 rounded-lg appearance-none [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3.5 [&::-webkit-slider-thumb]:h-3.5 [&::-webkit-slider-thumb]:bg-indigo-500 [&::-webkit-slider-thumb]:shadow-[0_0_12px_rgba(99,102,241,0.9)] [&::-webkit-slider-thumb]:rounded-full cursor-pointer hover:[&::-webkit-slider-thumb]:scale-110 active:[&::-webkit-slider-thumb]:scale-90 transition-all"
+                                  />
+                                </div>
+                                <div className="space-y-2">
+                                  <div className="flex justify-between text-[10px] text-slate-400 font-medium">
+                                    <span>Top K</span>
+                                    <span className="text-white/90 font-mono">
+                                      {agent.aiConfig?.topK ?? 40}
+                                    </span>
+                                  </div>
+                                  <input
+                                    type="range"
+                                    min="1"
+                                    max="100"
+                                    step="1"
+                                    value={agent.aiConfig?.topK ?? 40}
+                                    onChange={(e) => {
+                                      if (!agent.aiConfig)
+                                        agent.aiConfig = {
+                                          temperature: 0.7,
+                                          topP: 0.9,
+                                          topK: 40,
+                                          model: "gemini-3-flash-preview",
+                                        };
+                                      agent.aiConfig.topK = parseInt(
+                                        e.target.value,
+                                      );
+                                      window.dispatchEvent(
+                                        new CustomEvent("forceUpdateUi"),
+                                      );
+                                    }}
+                                    className="w-full accent-indigo-500 bg-white/10 h-1.5 rounded-lg appearance-none [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3.5 [&::-webkit-slider-thumb]:h-3.5 [&::-webkit-slider-thumb]:bg-indigo-500 [&::-webkit-slider-thumb]:shadow-[0_0_12px_rgba(99,102,241,0.9)] [&::-webkit-slider-thumb]:rounded-full cursor-pointer hover:[&::-webkit-slider-thumb]:scale-110 active:[&::-webkit-slider-thumb]:scale-90 transition-all"
+                                  />
+                                </div>
+                                <div className="space-y-2 pt-3 border-t border-white/5">
+                                  <div className="flex items-center justify-between">
+                                    <div className="flex flex-col">
+                                      <span className="text-[10px] text-white/90 font-medium tracking-wide">
+                                        Autonomous Loop (Auto-Drive)
+                                      </span>
+                                      <span className="text-[9px] text-slate-500">
+                                        Continuously self-prompt with output
+                                      </span>
+                                    </div>
+                                    <button
+                                      onClick={() => {
+                                        if (!agent.aiConfig)
+                                          agent.aiConfig = {
+                                            temperature: 0.7,
+                                            topP: 0.9,
+                                            topK: 40,
+                                            model: "gemini-3-flash-preview",
+                                            autonomousLoop: false,
+                                          };
+                                        agent.aiConfig.autonomousLoop =
+                                          !agent.aiConfig.autonomousLoop;
+                                        window.dispatchEvent(
+                                          new CustomEvent("forceUpdateUi"),
+                                        );
+                                      }}
+                                      className={`relative inline-flex h-4 w-8 items-center rounded-full transition-colors ${agent.aiConfig?.autonomousLoop ? "bg-indigo-500/80 shadow-[0_0_8px_rgba(99,102,241,0.6)]" : "bg-white/10 border border-white/5"}`}
+                                    >
+                                      <span
+                                        className={`inline-block h-3 w-3 transform rounded-full bg-white shadow-sm transition-transform ${agent.aiConfig?.autonomousLoop ? "translate-x-4" : "translate-x-0.5"}`}
+                                      />
+                                    </button>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Cognitive Buffer */}
+                            <div className="space-y-4 pt-2 border-t border-white/10 mt-6">
+                              <div className="flex items-center justify-between border-b border-white/10 pb-2">
+                                <div className="flex flex-col gap-1">
+                                  <div className="flex items-center gap-2">
+                                    <svg
+                                      className="w-3 h-3 text-emerald-500"
+                                      viewBox="0 0 24 24"
+                                      fill="none"
+                                      stroke="currentColor"
+                                      strokeWidth="2"
+                                    >
+                                      <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4"
+                                      />
+                                    </svg>
+                                    <span className="text-[10px] font-medium text-slate-400 capitalize tracking-wide">
+                                      Cognitive Buffer
+                                    </span>
+                                  </div>
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-[9px] font-mono text-white/50 bg-black/40 px-1.5 py-0.5 rounded">
+                                      {(agent.memory || []).length} TRACES
+                                    </span>
+                                    {agent.memory &&
+                                      agent.memory.length > 0 && (
+                                        <span className="text-[9px] font-mono text-emerald-500/70 bg-emerald-500/10 px-1.5 py-0.5 rounded">
+                                          LATEST:{" "}
+                                          {new Date(
+                                            Math.max(
+                                              ...agent.memory.map(
+                                                (m: any) => m.timestamp,
+                                              ),
+                                            ),
+                                          ).toLocaleTimeString([], {
+                                            hour: "2-digit",
+                                            minute: "2-digit",
+                                          })}
+                                        </span>
+                                      )}
+                                  </div>
+                                </div>
+                                <button
+                                  onClick={() => {
+                                    agent.memory = [];
+                                    window.dispatchEvent(
+                                      new CustomEvent("forceUpdateUi"),
+                                    );
+                                  }}
+                                  className="text-[9px] font-medium text-emerald-500 hover:text-white hover:bg-emerald-500/20 px-2 py-1 bg-emerald-500/10 border border-emerald-500/20 rounded-md transition-all shadow-sm flex items-center gap-1.5 h-7"
+                                >
+                                  Flush Buffer
+                                </button>
+                              </div>
+
+                              <div className="flex flex-col gap-2 pb-2">
+                                <div className="flex gap-2 items-center">
+                                  <input
+                                    type="text"
+                                    placeholder="Search traces..."
+                                    value={memorySearch}
+                                    onChange={(e) =>
+                                      setMemorySearch(e.target.value)
+                                    }
+                                    className="flex-1 bg-black/40 border border-white/10 rounded px-2 py-1.5 text-[10px] text-white focus:outline-none focus:border-emerald-500/50 placeholder:text-white/20"
+                                  />
+                                  <select
+                                    value={memoryFilter}
+                                    onChange={(e) =>
+                                      setMemoryFilter(e.target.value as any)
+                                    }
+                                    className="bg-black/40 border border-white/10 rounded px-2 py-1.5 text-[10px] text-white focus:outline-none focus:border-emerald-500/50 [&>option]:bg-[#09090b] outline-none"
+                                  >
+                                    <option value="all">All Types</option>
+                                    <option value="interaction">
+                                      Interaction
+                                    </option>
+                                    <option value="fact">Fact</option>
+                                    <option value="outcome">Outcome</option>
+                                  </select>
+                                </div>
+                              </div>
+
+                              <div className="flex flex-col gap-2 max-h-[250px] overflow-y-auto scrollbar-thin pr-2 pb-4">
+                                {!(agent.memory && agent.memory.length > 0) ? (
+                                  <div className="text-center py-6 text-[10px] text-white/30 italic">
+                                    Buffer empty
+                                  </div>
+                                ) : (
+                                  [...(agent.memory || [])]
+                                    .filter(
+                                      (mem) =>
+                                        memoryFilter === "all" ||
+                                        mem.type === memoryFilter,
+                                    )
+                                    .filter(
+                                      (mem) =>
+                                        !memorySearch ||
+                                        mem.content
+                                          .toLowerCase()
+                                          .includes(memorySearch.toLowerCase()),
+                                    )
+                                    .sort((a, b) => b.timestamp - a.timestamp)
+                                    .map((mem) => (
+                                      <div
+                                        key={mem.id}
+                                        className="bg-black/30 border border-white/5 rounded-lg p-3 flex flex-col gap-1.5 shadow-sm"
+                                      >
+                                        <div className="flex items-center justify-between">
+                                          <span
+                                            className={`text-[9px] font-mono uppercase tracking-widest px-1.5 py-0.5 rounded ${
+                                              mem.type === "interaction"
+                                                ? "bg-blue-500/10 text-blue-500"
+                                                : mem.type === "fact"
+                                                  ? "bg-amber-500/10 text-amber-500"
+                                                  : "bg-emerald-500/10 text-emerald-500"
+                                            }`}
+                                          >
+                                            {mem.type}
+                                          </span>
+                                          <span className="text-[9px] text-white/30">
+                                            {new Date(
+                                              mem.timestamp,
+                                            ).toLocaleTimeString()}
+                                          </span>
+                                        </div>
+                                        <p className="text-[11px] text-white/70 leading-relaxed font-sans">
+                                          {mem.content}
+                                        </p>
+                                      </div>
+                                    ))
+                                )}
+                              </div>
+                            </div>
+                          </>
+                        )}
+                      </motion.div>
+                    )}
+
+                    {activeTab === "core" && (
+                      <motion.div
+                        key="core"
+                        initial={{ opacity: 0, scale: 0.98 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.98 }}
+                        transition={{ duration: 0.2 }}
+                        className="flex-1 overflow-y-auto scrollbar-thin p-5 flex flex-col gap-6"
+                      >
+                        {/* Priority Directive */}
+                        <div className="space-y-4">
+                          <div className="flex items-center justify-between border-b border-white/10 pb-2">
+                            <div className="flex items-center gap-2">
+                              <Zap size={12} className="text-amber-500" />
+                              <span className="text-[10px] font-medium text-slate-400 capitalize flex items-center gap-1.5">
+                                System Priority
+                              </span>
+                            </div>
+                            <button
+                              onClick={() =>
+                                setIsOverridingGoal(!isOverridingGoal)
+                              }
+                              className={`text-[9px] font-medium transition-all px-2 py-1 rounded-md border ${
+                                isOverridingGoal
+                                  ? "bg-red-500/10 border-red-500/30 text-red-500"
+                                  : "bg-white/5 border-white/10 text-slate-400 hover:text-white hover:bg-white/10"
+                              }`}
+                            >
+                              {isOverridingGoal ? "Cancel" : "Manual Override"}
+                            </button>
+                          </div>
+
+                          {isOverridingGoal ? (
+                            <motion.div
+                              initial={{ opacity: 0, y: -10 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              className="bg-red-500/5 border border-red-500/30 rounded-xl p-5 space-y-4 relative overflow-hidden"
+                            >
+                              <div className="flex items-center gap-2 mb-1">
+                                <Terminal size={12} className="text-red-500" />
+                                <span className="text-[10px] text-red-500 capitalize font-semibold tracking-wide">
+                                  Neural Injection
+                                </span>
+                              </div>
+                              <textarea
+                                value={goalOverrideInput}
+                                onChange={(e) =>
+                                  setGoalOverrideInput(e.target.value)
+                                }
+                                placeholder="Enter new core directive..."
+                                className="w-full bg-black/60 border border-red-500/20 rounded-lg p-3 text-xs text-white h-20 resize-none focus:border-red-500/50 outline-none transition-all placeholder:text-slate-600 shadow-inner"
+                              />
+                              <button
+                                onClick={handleGoalOverride}
+                                className="w-full py-2.5 bg-red-600 hover:bg-red-500 text-white rounded-lg text-[11px] font-semibold transition-all active:scale-[0.98] shadow-sm"
+                              >
+                                Execute Directive
+                              </button>
+                              <p className="text-[9px] text-red-500/60 text-center mt-2 capitalize font-medium">
+                                Warning: Manual state manipulation
+                              </p>
+                            </motion.div>
+                          ) : agent.currentGoal ? (
+                            <div className="bg-amber-500/5 border border-amber-500/20 rounded-xl p-5 relative group shadow-sm">
+                              <div className="flex justify-between items-center mb-3 border-b border-amber-500/20 pb-2">
+                                <span className="text-[10px] text-amber-500 capitalize font-medium flex items-center gap-1.5">
+                                  <div className="w-1.5 h-1.5 bg-amber-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(245,158,11,0.6)]"></div>{" "}
+                                  Active Directive
+                                </span>
+                              </div>
+                              <p className="text-sm text-white/90 leading-relaxed font-sans">
+                                {agent.currentGoal}
+                              </p>
+                            </div>
+                          ) : (
+                            <button
+                              onClick={() => setIsOverridingGoal(true)}
+                              className="w-full py-8 border border-dashed border-white/10 rounded-xl flex flex-col items-center justify-center gap-3 text-slate-500 hover:text-white hover:bg-white/5 hover:border-white/20 transition-all group shadow-sm bg-black/20"
+                            >
+                              <Zap
+                                size={20}
+                                className="opacity-50 group-hover:opacity-100"
+                              />
+                              <span className="text-[11px] font-medium capitalize">
+                                Initialize Directive
+                              </span>
+                            </button>
+                          )}
+                        </div>
+
+                        {/* Autonomous Mode Toggle */}
+                        <div className="space-y-4">
+                          <div className="flex items-center justify-between border-b border-white/10 pb-2">
+                            <div className="flex items-center gap-2">
+                              <Activity
+                                size={12}
+                                className={
+                                  agent.aiConfig.autonomousLoop
+                                    ? "text-emerald-500"
+                                    : "text-slate-500"
+                                }
+                              />
+                              <span className="text-[10px] font-medium text-slate-400 capitalize flex items-center gap-1.5">
+                                Orchestration Mode
+                              </span>
+                            </div>
+                            <button
+                              onClick={() => {
+                                agent.aiConfig.autonomousLoop =
+                                  !agent.aiConfig.autonomousLoop;
+                                window.dispatchEvent(
+                                  new CustomEvent("forceUpdateUi"),
+                                );
+                              }}
+                              className={`w-10 h-5 rounded-full relative transition-colors ${
+                                agent.aiConfig.autonomousLoop
+                                  ? "bg-emerald-500"
+                                  : "bg-slate-700"
+                              }`}
+                            >
+                              <div
+                                className={`w-3.5 h-3.5 rounded-full bg-white absolute top-0.5 transition-all shadow-sm ${
+                                  agent.aiConfig.autonomousLoop
+                                    ? "left-[22px]"
+                                    : "left-0.5"
+                                }`}
+                              />
+                            </button>
+                          </div>
+
+                          <div
+                            className={`p-4 rounded-xl border flex flex-col gap-2 transition-all ${
+                              agent.aiConfig.autonomousLoop
+                                ? "bg-emerald-500/5 border-emerald-500/20"
+                                : "bg-black/20 border-white/5"
+                            }`}
+                          >
+                            <div className="flex items-center gap-2">
+                              <span
+                                className={`text-[11px] font-bold tracking-wide uppercase ${
+                                  agent.aiConfig.autonomousLoop
+                                    ? "text-emerald-400"
+                                    : "text-slate-400"
+                                }`}
+                              >
+                                {agent.aiConfig.autonomousLoop
+                                  ? "Autonomous Orchestrator"
+                                  : "Manual Drone"}
+                              </span>
+                            </div>
+                            <p
+                              className={`text-[10px] leading-relaxed ${
+                                agent.aiConfig.autonomousLoop
+                                  ? "text-emerald-500/70"
+                                  : "text-slate-500"
+                              }`}
+                            >
+                              {agent.aiConfig.autonomousLoop
+                                ? "Agent proactively analyzes context, generates its own tasks, and acts as an independent orchestrator."
+                                : "Agent only responds to direct interventions and assignments. Requires manual orchestration."}
+                            </p>
+                          </div>
+                        </div>
+
+                        {/* Relationship Map */}
+                        <div className="space-y-4">
+                          <div className="flex items-center justify-between border-b border-white/10 pb-2">
+                            <div className="flex items-center gap-2">
+                              <Radio size={12} className="text-slate-500" />
+                              <span className="text-[10px] font-medium text-slate-400 capitalize flex items-center gap-1.5">
+                                Network Topology
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-3">
+                              <span className="text-[10px] font-medium text-slate-500">
+                                {Object.keys(agent.relationships || {}).length}{" "}
+                                Nodes
+                              </span>
+                              <button
+                                onClick={() =>
+                                  setIsEditingNetwork(!isEditingNetwork)
+                                }
+                                className={`text-[9px] font-medium transition-all px-2 py-1 rounded-md border ${
+                                  isEditingNetwork
+                                    ? "bg-blue-500/10 border-blue-500/30 text-blue-500"
+                                    : "bg-white/5 border-white/10 text-slate-400 hover:text-white hover:bg-white/10"
+                                }`}
+                              >
+                                {isEditingNetwork ? "Done" : "Manage"}
+                              </button>
+                            </div>
+                          </div>
+
+                          {isEditingNetwork && (
+                            <motion.div
+                              initial={{ opacity: 0, y: -10 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              className="bg-blue-500/5 border border-blue-500/20 rounded-xl p-4 gap-3 flex flex-col mb-4"
+                            >
+                              <div className="flex flex-col gap-1.5">
+                                <label className="text-[10px] text-white/50 uppercase tracking-widest font-semibold flex justify-between">
+                                  <span>Target Node</span>
+                                </label>
+                                <select
+                                  value={networkTargetName}
+                                  onChange={(e) => {
+                                    setNetworkTargetName(e.target.value);
+                                    if (
+                                      agent.relationships &&
+                                      agent.relationships[e.target.value]
+                                    ) {
+                                      setNetworkAffinity(
+                                        agent.relationships[e.target.value]
+                                          .affinity,
+                                      );
+                                      setNetworkNotes(
+                                        agent.relationships[e.target.value]
+                                          .notes,
+                                      );
+                                    } else {
+                                      setNetworkAffinity(0);
+                                      setNetworkNotes("");
+                                    }
+                                  }}
+                                  className="w-full bg-black/60 border border-white/10 rounded-lg p-2.5 text-xs text-white focus:border-blue-500/50 outline-none transition-all"
+                                >
+                                  <option value="">Select agent...</option>
+                                  {allAgents
+                                    .filter((a) => a.id !== agent.id)
+                                    .map((a) => (
+                                      <option key={a.id} value={a.name}>
+                                        {a.name}
+                                      </option>
+                                    ))}
+                                </select>
+                              </div>
+
+                              {networkTargetName && (
+                                <div className="flex flex-col gap-3">
+                                  <div className="flex flex-col gap-1.5">
+                                    <label className="text-[10px] text-white/50 uppercase tracking-widest font-semibold flex justify-between">
+                                      <span>Affinity: {networkAffinity}%</span>
+                                    </label>
+                                    <input
+                                      type="range"
+                                      min="-100"
+                                      max="100"
+                                      value={networkAffinity}
+                                      onChange={(e) =>
+                                        setNetworkAffinity(
+                                          parseInt(e.target.value),
+                                        )
+                                      }
+                                      className="w-full accent-blue-500"
+                                    />
+                                  </div>
+                                  <div className="flex flex-col gap-1.5">
+                                    <label className="text-[10px] text-white/50 uppercase tracking-widest font-semibold flex justify-between">
+                                      <span>Interaction Notes</span>
+                                    </label>
+                                    <textarea
+                                      value={networkNotes}
+                                      onChange={(e) =>
+                                        setNetworkNotes(e.target.value)
+                                      }
+                                      placeholder="Manual contextual override..."
+                                      className="w-full bg-black/60 border border-white/10 rounded-lg p-3 text-xs text-white h-16 resize-none focus:border-blue-500/50 outline-none transition-all placeholder:text-slate-600"
+                                    />
+                                  </div>
+                                  <button
+                                    onClick={handleSaveNetworkNode}
+                                    className="w-full py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-[11px] font-semibold transition-all active:scale-[0.98]"
+                                  >
+                                    Update Connection
+                                  </button>
+                                </div>
+                              )}
+                            </motion.div>
+                          )}
+
+                          <div className="flex flex-col gap-3">
+                            {Object.keys(agent.relationships || {}).length ===
+                            0 ? (
+                              <div className="text-center py-10 text-[10px] font-medium text-slate-500 capitalize">
+                                No connections detected
+                              </div>
+                            ) : (
+                              Object.entries(agent.relationships || {}).map(
+                                ([name, rel], i) => (
+                                  <motion.div
+                                    key={i}
+                                    variants={{
+                                      hidden: { opacity: 0, y: 10 },
+                                      visible: { opacity: 1, y: 0 },
+                                    }}
+                                    className="flex flex-col gap-2.5 bg-black/40 border border-white/5 rounded-xl p-4 shadow-sm"
+                                  >
+                                    <div className="flex justify-between items-center">
+                                      <div className="flex items-center gap-2.5">
+                                        <div className="w-8 h-8 rounded-lg bg-black border border-white/10 flex items-center justify-center font-display text-sm text-white/50 shadow-inner">
+                                          {name.charAt(0)}
+                                        </div>
+                                        <div className="flex flex-col">
+                                          <span className="text-xs font-semibold text-white/90 truncate">
+                                            {name}
+                                          </span>
+                                          <span
+                                            className={`text-[10px] font-medium transition-all ${rel.affinity > 0 ? "text-emerald-500" : rel.affinity < 0 ? "text-red-500" : "text-slate-400"}`}
+                                          >
+                                            Sync: {rel.affinity > 0 ? "+" : ""}
+                                            {rel.affinity}%
+                                          </span>
+                                        </div>
+                                      </div>
+                                      {isEditingNetwork && (
+                                        <button
+                                          onClick={() => {
+                                            setNetworkTargetName(name);
+                                            setNetworkAffinity(rel.affinity);
+                                            setNetworkNotes(rel.notes);
+                                          }}
+                                          className="text-white/30 hover:text-white p-1 rounded-md bg-white/5 transition-colors"
+                                          title="Edit Connection"
+                                        >
+                                          <Settings2 size={12} />
+                                        </button>
+                                      )}
+                                    </div>
+
+                                    <div className="h-1 bg-white/5 rounded-full overflow-hidden flex relative ring-1 ring-white/5">
+                                      <div className="absolute left-1/2 top-0 h-full w-px bg-white/20 z-10"></div>
+                                      <motion.div
+                                        initial={{ width: 0 }}
+                                        animate={{
+                                          width: `${Math.abs(rel.affinity) / 2}%`,
+                                          left:
+                                            rel.affinity >= 0 ? "50%" : "auto",
+                                          right:
+                                            rel.affinity < 0 ? "50%" : "auto",
+                                        }}
+                                        className={`h-full ${rel.affinity >= 0 ? "bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.8)]" : "bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.8)]"} absolute transition-all duration-700`}
+                                      ></motion.div>
+                                    </div>
+
+                                    <p className="text-[10px] text-slate-400 line-clamp-1 italic font-sans pl-1.5 border-l-2 border-white/10 mt-1">
+                                      {rel.notes ||
+                                        "No recent signal overlap recorded."}
+                                    </p>
+                                  </motion.div>
+                                ),
+                              )
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Memory Buffer */}
+                        <div className="space-y-4">
+                          <div className="flex items-center justify-between border-b border-white/10 pb-2">
+                            <div className="flex items-center gap-2">
+                              <Brain size={12} className="text-slate-500" />
+                              <span className="text-[10px] font-medium text-slate-400 capitalize">
+                                Cognitive Buffer
+                              </span>
+                            </div>
+                            <button className="text-[10px] font-medium text-red-500/60 hover:text-red-500 capitalize transition-all">
+                              Flush
+                            </button>
+                          </div>
+
+                          <div className="flex flex-col gap-2.5">
+                            {!agent.memory || agent.memory.length === 0 ? (
+                              <div className="text-center py-10 text-[10px] font-medium text-slate-500 capitalize">
+                                Empty heuristic set
+                              </div>
+                            ) : (
+                              agent.memory
+                                .slice(-8)
+                                .reverse()
+                                .map((m, i) => {
+                                  const relevance =
+                                    typeof agent.calculateMemoryRelevance ===
+                                    "function"
+                                      ? agent.calculateMemoryRelevance(
+                                          m,
+                                          Date.now(),
+                                        )
+                                      : 0;
+                                  const relevancePercent = Math.min(
+                                    100,
+                                    Math.max(0, (relevance / 100) * 100),
+                                  );
+                                  return (
+                                    <motion.div
+                                      key={i}
+                                      variants={{
+                                        hidden: { opacity: 0, y: 10 },
+                                        visible: { opacity: 1, y: 0 },
+                                      }}
+                                      className="text-[11px] text-white/80 bg-black/40 p-4 rounded-xl border border-white/5 relative group hover:border-blue-500/30 transition-colors shadow-sm"
+                                    >
+                                      <div className="absolute left-0 top-3 bottom-3 w-1 bg-blue-500/20 group-hover:bg-blue-500 transition-colors rounded-r-sm"></div>
+                                      <div className="text-[9px] text-slate-500 font-medium mb-1.5 flex justify-between items-center capitalize">
+                                        <div className="flex items-center gap-2">
+                                          <span>
+                                            Buffer ID {agent.memory.length - i}
+                                          </span>
+                                          <div
+                                            className="w-16 h-1 bg-white/10 rounded-full overflow-hidden"
+                                            title={`Relevance: ${Math.round(relevance)}`}
+                                          >
+                                            <div
+                                              className="h-full bg-blue-500/80 transition-all"
+                                              style={{
+                                                width: `${relevancePercent}%`,
+                                              }}
+                                            ></div>
+                                          </div>
+                                        </div>
+                                        <span className="group-hover:text-blue-400 transition-colors">
+                                          {m.type || "Raw"}
+                                        </span>
+                                      </div>
+                                      <div className="leading-relaxed font-sans">
+                                        {m.content}
+                                      </div>
+                                    </motion.div>
+                                  );
+                                })
+                            )}
+                          </div>
+                        </div>
+                      </motion.div>
+                    )}
+
+                    {activeTab === "chat" && (
+                      <motion.div
+                        key="chat"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="flex-1 flex flex-col min-h-0 bg-transparent"
+                      >
+                        <div className="px-6 py-4 bg-slate-900/60 border-b border-white/5 flex items-center justify-between shadow-sm sticky top-0 z-10 backdrop-blur-xl">
+                          <div className="flex items-center gap-2">
+                            <Activity size={14} className="text-indigo-400" />
+                            <span className="text-[12px] text-slate-200 font-medium tracking-wide">
+                              Comms Feed
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-2 text-slate-500">
+                            <span className="text-[11px] font-medium">
+                              {messages.length} Messages
+                            </span>
+                          </div>
+                        </div>
+
+                        <div className="flex-1 overflow-y-auto scrollbar-thin p-6 flex flex-col gap-6 relative">
+                          <div className="flex-1"></div>
+                          <AnimatePresence>
+                            {messages.length === 0 ? (
+                              <motion.div
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                className="m-auto text-center py-20 flex flex-col items-center gap-6"
+                              >
+                                <div className="w-16 h-16 border border-slate-700/50 rounded-2xl flex items-center justify-center bg-slate-800/30 gap-2 shadow-sm relative rotate-3">
+                                  <Radio size={24} className="text-slate-500" />
+                                </div>
+                                <div className="text-[13px] font-medium text-slate-400 leading-relaxed max-w-[200px]">
+                                  Send a message or assign a task to begin.
+                                </div>
+                              </motion.div>
+                            ) : (
+                              messages.map((m, i) => {
+                                const isAutoCycle = m.content.includes(
+                                  "[AUTONOMOUS CYCLE]:",
+                                );
+                                let cleanedContent = m.content.replace(
+                                  /^\[.*?\]\s*/,
+                                  "",
+                                );
+
+                                if (m.role === "user" && isAutoCycle) {
+                                  return (
+                                    <motion.div
+                                      key={i}
+                                      className="w-full flex flex-col items-center my-2"
+                                    >
+                                      <div className="px-3 py-1.5 bg-slate-800/50 border border-slate-700/50 rounded-full flex items-center gap-2 shadow-sm">
+                                        <div className="w-1.5 h-1.5 bg-indigo-500 rounded-full animate-pulse"></div>
+                                        <span className="text-[10px] text-slate-300 font-medium tracking-wide">
+                                          Autonomous Action
+                                        </span>
+                                      </div>
+                                    </motion.div>
+                                  );
+                                }
+
+                                return (
+                                  <motion.div
+                                    key={i}
+                                    initial={{ opacity: 0, y: 10, scale: 0.98 }}
+                                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                                    className="w-full flex flex-col"
+                                  >
+                                    {m.role === "user" ? (
+                                      <div className="flex flex-col items-end pl-10">
+                                        <div className="px-4 py-3 bg-indigo-600 text-white font-sans text-[13px] rounded-2xl rounded-tr-sm shadow-md relative leading-relaxed max-w-[90%] break-words">
+                                          {cleanedContent}
+                                        </div>
+                                      </div>
+                                    ) : m.role === "system" ? (
+                                      <div className="flex flex-col items-start px-4 py-3 w-full border border-amber-500/20 bg-amber-500/5 rounded-2xl rounded-tl-sm relative my-2 shadow-sm">
+                                        <div className="text-[11px] text-amber-500 font-medium mb-1.5 flex items-center gap-1.5">
+                                          <Brain size={12} />
+                                          System Thought
+                                        </div>
+                                        <div className="text-slate-300 font-sans text-[13px] leading-relaxed break-words whitespace-pre-wrap">
+                                          {m.content.replace("[Thought]: ", "")}
+                                        </div>
+                                      </div>
+                                    ) : (
+                                      <div className="flex flex-col items-start pr-10">
+                                        <div className="px-4 py-3 bg-slate-800 border border-slate-700/50 text-slate-100 font-sans text-[13px] rounded-2xl rounded-tl-sm shadow-sm relative group hover:bg-slate-700/50 transition-colors">
+                                          <div className="text-[11px] text-indigo-300 font-medium mb-1 flex items-center gap-1.5">
+                                            {agent?.name || "Agent"}
+                                          </div>
+                                          <div className="leading-relaxed whitespace-pre-wrap break-words">
+                                            {cleanedContent}
+                                          </div>
+                                        </div>
+                                      </div>
+                                    )}
+                                  </motion.div>
+                                );
+                              })
+                            )}
+                          </AnimatePresence>
+                          {isLoading && (
+                            <motion.div
+                              initial={{ opacity: 0, x: -10 }}
+                              animate={{ opacity: 1, x: 0 }}
+                              className="p-3 bg-slate-800/50 border border-slate-700/50 text-slate-400 text-[11px] font-medium rounded-2xl flex items-center gap-3 w-fit shadow-sm"
+                            >
+                              <div className="flex gap-1">
+                                <div className="w-1.5 h-1.5 bg-indigo-400 rounded-full animate-bounce"></div>
+                                <div
+                                  className="w-1.5 h-1.5 bg-indigo-400 rounded-full animate-bounce"
+                                  style={{ animationDelay: "150ms" }}
+                                ></div>
+                                <div
+                                  className="w-1.5 h-1.5 bg-indigo-400 rounded-full animate-bounce"
+                                  style={{ animationDelay: "300ms" }}
+                                ></div>
+                              </div>
+                              Thinking...
+                            </motion.div>
+                          )}
+                        </div>
+
+                        {/* Input Region */}
+                        <form
+                          onSubmit={handleSubmit}
+                          className="p-4 bg-[#090b0f] border-t border-white/5 relative z-10 shrink-0 backdrop-blur-3xl"
+                        >
+                          <div className="flex flex-col gap-3">
+                            <div className="flex justify-between items-center px-1">
+                              <div className="flex items-center gap-2">
+                                <span className="text-[11px] font-medium text-slate-500">
+                                  Priority
+                                </span>
+                                <select
+                                  value={priority}
+                                  onChange={(e) =>
+                                    setPriority(e.target.value as any)
+                                  }
+                                  className="bg-slate-800/50 border border-slate-700/50 text-slate-300 text-[11px] font-medium rounded-md px-2 py-1 outline-none appearance-none pr-6 cursor-pointer hover:bg-slate-700/80 transition-colors"
+                                  style={{
+                                    backgroundImage: `url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e")`,
+                                    backgroundRepeat: "no-repeat",
+                                    backgroundPosition: "right 0.25rem center",
+                                    backgroundSize: "1em",
+                                  }}
+                                >
+                                  <option value="low">Low</option>
+                                  <option value="medium">Medium</option>
+                                  <option value="high">High</option>
+                                </select>
+                              </div>
+                            </div>
+                            <div className="flex items-end gap-2">
+                              <div className="relative flex-1 group">
+                                <textarea
+                                  className="w-full bg-[#0f1115] rounded-xl border border-white/10 p-3 pr-10 text-[13px] h-12 min-h-[48px] max-h-32 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/50 text-white font-sans resize-y shadow-inner placeholder:text-slate-600 transition-all font-medium py-3.5"
+                                  placeholder="Message or assign task..."
+                                  value={input}
+                                  onChange={(e) => setInput(e.target.value)}
+                                  disabled={
+                                    isLoading ||
+                                    agent?.state === CharacterState.WORK
+                                  }
+                                  onKeyDown={(e) => {
+                                    if (e.key === "Enter" && !e.shiftKey) {
+                                      e.preventDefault();
+                                      handleSubmit(e);
+                                    }
+                                  }}
+                                />
+                              </div>
+                              <button
+                                type="submit"
+                                disabled={
+                                  !input.trim() ||
+                                  isLoading ||
+                                  !agent ||
+                                  agent?.state === CharacterState.WORK
+                                }
+                                className={`w-12 h-12 shrink-0 rounded-xl flex items-center justify-center transition-all shadow-sm ${
+                                  priority === "high"
+                                    ? "bg-red-500 hover:bg-red-600 text-white"
+                                    : priority === "medium"
+                                      ? "bg-amber-500 hover:bg-amber-600 text-black"
+                                      : "bg-indigo-600 hover:bg-indigo-500 text-white"
+                                } disabled:opacity-50 disabled:cursor-not-allowed`}
+                              >
+                                <Send
+                                  size={16}
+                                  className="relative right-0.5"
+                                />
+                              </button>
+                            </div>
+                          </div>
+                        </form>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+              </>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </>
   );
 }
