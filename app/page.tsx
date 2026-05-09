@@ -138,6 +138,11 @@ export default function Page() {
   const [isClient, setIsClient] = useState(false);
   const [cabinetTab, setCabinetTab] = useState<"logs" | "files">("logs");
 
+  // Swarm States
+  const [swarmTopic, setSwarmTopic] = useState("");
+  const [swarmStatus, setSwarmStatus] = useState<"idle" | "running" | "completed" | "error">("idle");
+  const [swarmResult, setSwarmResult] = useState<string>("");
+
   useEffect(() => {
     setIsClient(true);
     SpriteLoader.loadSheets().then(() => {
@@ -1156,6 +1161,11 @@ export default function Page() {
                         label: "Comms",
                         icon: <Radio size={14} />,
                       },
+                      {
+                        id: "swarm",
+                        label: "OpenClaw Swarm",
+                        icon: <Cpu size={14} />,
+                      },
                     ].map((tab) => (
                       <button
                         key={tab.id}
@@ -1765,6 +1775,76 @@ export default function Page() {
                               </div>
                             </div>
                           </div>
+                        </motion.div>
+                      )}
+
+                      {hudTab === "swarm" && (
+                        <motion.div
+                          key="swarm"
+                          initial={{ opacity: 0, scale: 0.98 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          exit={{ opacity: 0, scale: 0.98 }}
+                          transition={{ duration: 0.3, ease: "circOut" }}
+                          className="flex flex-col gap-5"
+                        >
+                          <div className="bg-slate-800/40 border border-slate-700/50 p-5 rounded-2xl shadow-sm">
+                            <h4 className="text-sm font-sans font-semibold text-white mb-2">OpenClaw Autonomous Swarm</h4>
+                            <p className="text-xs text-slate-400 mb-4">Command the swarm (Worker, Critic, Orchestrator) to solve a problem. They will write code, execute it in a Docker sandbox, and debate the results.</p>
+
+                            <textarea
+                              value={swarmTopic}
+                              onChange={(e) => setSwarmTopic(e.target.value)}
+                              placeholder="E.g., Write a Python script to check if a number is prime, and prove it works."
+                              className="w-full h-24 bg-black/40 border border-white/10 rounded-xl p-3 text-xs text-white outline-none focus:border-indigo-500/50 transition-colors resize-none font-mono mb-4"
+                            />
+
+                            <button
+                              onClick={async () => {
+                                if (!swarmTopic.trim() || swarmStatus === "running") return;
+                                setSwarmStatus("running");
+                                setSwarmResult("Agents are working, coding, and debating in the sandbox... This may take a minute.");
+
+                                try {
+                                  const res = await fetch("http://localhost:8000/swarm_execute", {
+                                    method: "POST",
+                                    headers: {
+                                      "Content-Type": "application/json",
+                                      "X-API-KEY": "default-secret-key" // Default auth fallback for local testing
+                                    },
+                                    body: JSON.stringify({ topic: swarmTopic })
+                                  });
+
+                                  if (!res.ok) {
+                                    throw new Error(`Server returned ${res.status}`);
+                                  }
+
+                                  const data = await res.json();
+                                  setSwarmResult(data.result);
+                                  setSwarmStatus("completed");
+                                } catch (err: any) {
+                                  setSwarmResult(`Error: ${err.message}. Make sure backend is running on port 8000 without API_KEY, or set the header.`);
+                                  setSwarmStatus("error");
+                                }
+                              }}
+                              disabled={swarmStatus === "running"}
+                              className={`w-full py-3 rounded-xl font-sans text-xs font-bold uppercase tracking-widest transition-all ${
+                                swarmStatus === "running"
+                                  ? "bg-slate-700 text-slate-400 cursor-not-allowed"
+                                  : "bg-indigo-600 hover:bg-indigo-500 text-white shadow-[0_0_15px_rgba(79,70,229,0.3)]"
+                              }`}
+                            >
+                              {swarmStatus === "running" ? "EXECUTING SWARM..." : "INITIATE SWARM"}
+                            </button>
+                          </div>
+
+                          {swarmResult && (
+                            <div className="bg-black/60 border border-slate-700/50 p-4 rounded-xl shadow-inner overflow-hidden flex flex-col">
+                              <span className="text-[10px] font-mono text-slate-400 uppercase tracking-widest mb-2 border-b border-slate-700/50 pb-2">Swarm Output</span>
+                              <div className="text-[11px] font-mono text-emerald-400 leading-relaxed overflow-y-auto max-h-48 scrollbar-thin whitespace-pre-wrap">
+                                {swarmResult}
+                              </div>
+                            </div>
+                          )}
                         </motion.div>
                       )}
                     </AnimatePresence>
