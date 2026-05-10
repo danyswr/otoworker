@@ -18,7 +18,6 @@ import {
   Thermometer,
   Box,
 } from "lucide-react";
-import { GoogleGenAI } from "@google/genai";
 import type { GameState } from "@/components/OfficeCanvas";
 import { Character, CharacterState } from "@/lib/office/worker/api/Character";
 import { Pathfinding } from "@/lib/office/engine/Pathfinding";
@@ -138,12 +137,72 @@ export default function Page() {
   const [isClient, setIsClient] = useState(false);
   const [cabinetTab, setCabinetTab] = useState<"logs" | "files">("logs");
 
+  // === API Settings State ===
+  const [showSettings, setShowSettings] = useState(false);
+  const [apiProvider, setApiProvider] = useState<"gemini" | "openrouter">("gemini");
+  const [apiKey, setApiKey] = useState("");
+  const [selectedModel, setSelectedModel] = useState("gemini-2.0-flash");
+  const [availableModels, setAvailableModels] = useState<string[]>([]);
+  const [isLoadingModels, setIsLoadingModels] = useState(false);
+  const [settingsSaved, setSettingsSaved] = useState(false);
+
   useEffect(() => {
     setIsClient(true);
     SpriteLoader.loadSheets().then(() => {
       setAssetsLoaded(true);
     });
+    // Load settings from localStorage
+    try {
+      const saved = localStorage.getItem("otoworker_settings");
+      if (saved) {
+        const s = JSON.parse(saved);
+        if (s.provider) setApiProvider(s.provider);
+        if (s.apiKey) setApiKey(s.apiKey);
+        if (s.model) setSelectedModel(s.model);
+      }
+    } catch (e) {}
   }, []);
+
+  // Fetch models depending on provider
+  const fetchModels = async (key: string, provider: string) => {
+    if (!key) return;
+    setIsLoadingModels(true);
+    try {
+      if (provider === "openrouter") {
+        const res = await fetch(`https://openrouter.ai/api/v1/models`, {
+          headers: { Authorization: `Bearer ${key}` }
+        });
+        const data = await res.json();
+        if (data.data) {
+          setAvailableModels(data.data.map((m: any) => m.id));
+        }
+      } else {
+        const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${key}`);
+        const data = await res.json();
+        if (data.models) {
+          const genModels = data.models
+            .filter((m: any) => m.name && m.supportedGenerationMethods?.includes("generateContent"))
+            .map((m: any) => m.name.replace("models/", ""));
+          setAvailableModels(genModels);
+        }
+      }
+    } catch (e) {
+      console.error("Failed to fetch models", e);
+    }
+    setIsLoadingModels(false);
+  };
+
+  const saveSettings = () => {
+    const settings = { provider: apiProvider, apiKey, model: selectedModel };
+    localStorage.setItem("otoworker_settings", JSON.stringify(settings));
+    setSettingsSaved(true);
+    setTimeout(() => setSettingsSaved(false), 2000);
+    // Update all existing characters to use the new model
+    gameStateRef.current.characters.forEach((c) => {
+      if (c.aiConfig) c.aiConfig.model = selectedModel;
+    });
+    setCharacterList([...gameStateRef.current.characters]);
+  };
 
   const gameStateRef = useRef<GameState>({
     characters: [],
@@ -615,46 +674,37 @@ export default function Page() {
         setLoadingMap((prev) => ({ ...prev, [agent.id]: true }));
 
         try {
-          const apiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY || "";
-          if (!apiKey) {
-            throw new Error("Missing Gemini API Key");
+          const userKey = apiKey || process.env.NEXT_PUBLIC_GEMINI_API_KEY || "";
+          if (!userKey) {
+            throw new Error("No API Key configured. Open Settings (⚙) to add your key.");
           }
-          const ai = new GoogleGenAI({ apiKey });
-          const modelName = agent.aiConfig.model || "gemini-3-flash-preview";
+          const modelName = agent.aiConfig.model || selectedModel || "gemini-2.0-flash";
 
           const aiPrompt = `[SYSTEM DEPLOYMENT: VIRTUAL WORKER SIMULATION]\nYou are ${agent.name}, an autonomous AI virtual worker running in an unbounded UNIX environment.\n\nROLE: ${agent.profession}, ${agent.mbti}, ${agent.stance}\nCURRENT GOAL: ${agent.currentGoal || "None. Wait for instructions."}\nBIO: ${agent.bio}\n\nENVIRONMENT:\n${otherAgentsStatus}\n\nRECENT LOGS:\n${formattedLogs}\n\nFILES:\n${cabFiles}\n\nEVENT/TASK:\n"${task}"\n\nIf you are stuck in an autonomous loop, analyze the command output and plan the next step. You have full shell execution access via the "command" field to read/write files, test code, run npm scripts, etc. If the overall task is fully complete, use action_type: "done".\n\nYou MUST output a valid JSON snippet matching this schema (with NO SURROUNDING MARKDOWN OR BACKTICKS):\n{\n  "thought_process": "Internal monologue, step-by-step reasoning",\n  "spoken_reply": "Message shown to user or team",\n  "action_type": "command" | "talk" | "done",\n  "command": "Shell command to run (if action_type is command)",\n  "save_memory": { "type": "fact|outcome", "content": "Knowledge to store" },\n  "update_goal": "Your current operating objective"\n}`;
 
-          const parts: any[] = [{ text: aiPrompt }];
-
-          // Grab recent uploaded files
+          let responseText = "";
           const recentFiles = uploadedFilesRef.current.slice(-2);
-          for (const file of recentFiles) {
-            if (file.type.startsWith("image/")) {
-              parts.push({
-                inlineData: {
-                  data: file.data.split(",")[1],
-                  mimeType: file.type,
-                },
-              });
-            }
-          }
 
-          const result = await ai.models.generateContent({
-            model: modelName,
-            contents: [{ role: "user", parts }],
-            config: {
-              temperature: agent.aiConfig.temperature ?? 0.7,
-              maxOutputTokens: 1000,
-            },
+          const proxyRes = await fetch("/api/chat", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              messages: [{ role: "user", content: aiPrompt }],
+              provider: apiProvider,
+              apiKey: userKey,
+              model: modelName,
+            }),
           });
-
-          const responseText = result.text || "Thinking...";
+          
+          const orData = await proxyRes.json();
+          if (!proxyRes.ok || orData.error) {
+            throw new Error(orData.error?.message || `HTTP ${proxyRes.status} Error`);
+          }
+          responseText = orData.choices?.[0]?.message?.content || "Thinking...";
 
           agent.state = CharacterState.WORK;
 
-          const jsonMatch = responseText.match(
-            /```json.*?\n?(\{[\s\S]*?\})\n*.*?```/,
-          );
+          const jsonMatch = responseText.match(/(\{[\s\S]*?\})/);
           if (jsonMatch) {
             try {
               const parsed = JSON.parse(jsonMatch[1]);
@@ -735,8 +785,22 @@ export default function Page() {
                   }, 5000);
                 }
               }
-            } catch (e) {}
+            } catch (e) {
+              console.error('[JSON Parse Error]', e);
+            }
           }
+
+          // Display agent's spoken reply in chat
+          setChats((prev) => ({
+            ...prev,
+            [agent.id]: [
+              ...(prev[agent.id] || []),
+              {
+                role: "agent",
+                content: responseText,
+              },
+            ],
+          }));
 
           setLoadingMap((prev) => ({ ...prev, [agent.id]: false }));
           agent.state = CharacterState.IDLE;
@@ -744,47 +808,36 @@ export default function Page() {
         } catch (e: any) {
           setLoadingMap((prev) => ({ ...prev, [agent.id]: false }));
 
+          const errorMessage = e.message || "Unknown error occurred";
+          
           const isQuotaError =
-            e.message?.includes("429") ||
-            e.message?.includes("RESOURCE_EXHAUSTED") ||
-            e.message?.includes("usage limit");
+            errorMessage.includes("429") ||
+            errorMessage.includes("RESOURCE_EXHAUSTED") ||
+            errorMessage.includes("usage limit") ||
+            errorMessage.includes("Rate limit");
 
+          let displayMsg = "";
           if (isQuotaError) {
-            console.warn(
-              `[QUOTA EXCEEDED] Agent ${agent.name} hitting rate limits.`,
-            );
-
-            // Re-queue the task and set backoff
-            agent.taskQueue.unshift(taskItem);
-            agent.retryCooldown = Date.now() + 30000; // 30 second penalty
-
-            setChats((prev) => ({
-              ...prev,
-              [agent.id]: [
-                ...(prev[agent.id] || []),
-                {
-                  role: "agent",
-                  content: `[SYSTEM_NOTIFICATION]: Rate limit reached. I am pausing for 30s before retrying your request...`,
-                },
-              ],
-            }));
-
-            // We don't call setTimeout(processNextTask) here because finishTask will do it
+            console.warn(`[QUOTA EXCEEDED] Agent ${agent.name} hitting rate limits.`);
+            displayMsg = `[SYSTEM_NOTIFICATION]: Rate limit reached from provider. Task aborted to prevent spam. Please wait a moment or check your API credits. (${apiProvider.toUpperCase()})`;
           } else {
-            setChats((prev) => ({
-              ...prev,
-              [agent.id]: [
-                ...(prev[agent.id] || []),
-                {
-                  role: "agent",
-                  content: `Processing Failure: ${e.message?.substring(0, 100)}`,
-                },
-              ],
-            }));
+            displayMsg = `[SYSTEM_NOTIFICATION]: Processing Failure - ${errorMessage.substring(0, 150)}`;
           }
 
+          setChats((prev) => ({
+            ...prev,
+            [agent.id]: [
+              ...(prev[agent.id] || []),
+              {
+                role: "agent",
+                content: displayMsg,
+              },
+            ],
+          }));
+
+          // DO NOT re-queue the task on API errors to prevent infinite loops and spam.
           agent.state = CharacterState.IDLE;
-          return { result: `Error encountered during cycle.` };
+          return { result: `Error encountered: ${errorMessage}` };
         }
       };
 
@@ -819,7 +872,7 @@ export default function Page() {
       }
       // eslint-disable-next-line react-hooks/exhaustive-deps
     },
-    [setCharacterList],
+    [setCharacterList, apiProvider, apiKey, selectedModel],
   );
 
   const assignTaskToAgent = useCallback(
@@ -1082,14 +1135,171 @@ export default function Page() {
             <button className="p-2 text-white/30 hover:text-white transition-colors">
               <Radio size={14} />
             </button>
-            <button className="p-2 text-white/30 hover:text-white transition-colors">
+            <button onClick={() => { setShowSettings(true); if (apiKey) fetchModels(apiKey, apiProvider); }} className="p-2 text-white/30 hover:text-white transition-colors relative">
               <Settings2 size={14} />
+              {apiKey && <span className="absolute top-1 right-1 w-1.5 h-1.5 bg-emerald-500 rounded-full"></span>}
             </button>
           </div>
         </div>
       </header>
 
-      {/* Main Container - Responsive Grid */}
+      {/* === SETTINGS MODAL === */}
+      <AnimatePresence>
+        {showSettings && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[200] bg-black/60 backdrop-blur-sm flex items-center justify-center"
+            onClick={() => setShowSettings(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.9, opacity: 0, y: 20 }}
+              transition={{ type: "spring", stiffness: 400, damping: 30 }}
+              className="w-full max-w-md bg-[#0f1115] border border-white/10 rounded-2xl shadow-2xl overflow-hidden"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Header */}
+              <div className="flex items-center justify-between px-6 py-4 border-b border-white/5 bg-white/[0.02]">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-lg bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center">
+                    <Settings2 size={16} className="text-indigo-400" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-semibold text-white">API Configuration</h3>
+                    <p className="text-[10px] text-slate-500 uppercase tracking-widest">Provider & Model Settings</p>
+                  </div>
+                </div>
+                <button onClick={() => setShowSettings(false)} className="p-1.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-all">
+                  <X size={16} />
+                </button>
+              </div>
+
+              {/* Body */}
+              <div className="px-6 py-5 space-y-5">
+                {/* Provider Selection */}
+                <div className="space-y-2">
+                  <label className="text-[10px] font-mono text-slate-400 uppercase tracking-widest">Provider</label>
+                  <div className="flex gap-2">
+                    {(["gemini", "openrouter"] as const).map((p) => (
+                      <button
+                        key={p}
+                        onClick={() => { setApiProvider(p); setAvailableModels([]); }}
+                        className={`flex-1 py-2.5 rounded-xl text-xs font-semibold transition-all border ${
+                          apiProvider === p
+                            ? "bg-indigo-500/20 border-indigo-500/40 text-indigo-300 shadow-[0_0_15px_rgba(99,102,241,0.15)]"
+                            : "bg-white/[0.03] border-white/5 text-slate-400 hover:border-white/15 hover:text-white"
+                        }`}
+                      >
+                        {p === "gemini" ? "🔷 Gemini" : "🌐 OpenRouter"}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* API Key */}
+                <div className="space-y-2">
+                  <label className="text-[10px] font-mono text-slate-400 uppercase tracking-widest">API Key</label>
+                  <div className="relative">
+                    <input
+                      type="password"
+                      value={apiKey}
+                      onChange={(e) => setApiKey(e.target.value)}
+                      placeholder={apiProvider === "gemini" ? "AIzaSy..." : "sk-or-v1-..."}
+                      className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-xs text-white font-mono focus:border-indigo-500/50 focus:ring-1 focus:ring-indigo-500/30 outline-none transition-all placeholder:text-slate-600 shadow-inner"
+                    />
+                    {apiKey && (
+                      <button
+                        onClick={() => fetchModels(apiKey, apiProvider)}
+                        className="absolute right-2 top-1/2 -translate-y-1/2 text-[9px] font-mono text-indigo-400 hover:text-white bg-indigo-500/10 hover:bg-indigo-500/20 px-2 py-1 rounded-lg border border-indigo-500/20 transition-all"
+                      >
+                        {isLoadingModels ? "Loading..." : "Fetch Models"}
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                {/* Model Selection */}
+                <div className="space-y-2">
+                  <label className="text-[10px] font-mono text-slate-400 uppercase tracking-widest">
+                    Model {apiProvider === "openrouter" && <span className="text-slate-600">(manual input)</span>}
+                  </label>
+                  {apiProvider === "gemini" ? (
+                    availableModels.length > 0 ? (
+                      <select
+                        value={selectedModel}
+                        onChange={(e) => setSelectedModel(e.target.value)}
+                        className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-xs text-white font-mono focus:border-indigo-500/50 focus:ring-1 focus:ring-indigo-500/30 outline-none transition-all shadow-inner appearance-none cursor-pointer"
+                      >
+                        {availableModels.map((m) => (
+                          <option key={m} value={m} className="bg-[#0f1115] text-white">
+                            {m}
+                          </option>
+                        ))}
+                      </select>
+                    ) : (
+                      <input
+                        type="text"
+                        value={selectedModel}
+                        onChange={(e) => setSelectedModel(e.target.value)}
+                        placeholder="gemini-2.0-flash"
+                        className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-xs text-white font-mono focus:border-indigo-500/50 focus:ring-1 focus:ring-indigo-500/30 outline-none transition-all placeholder:text-slate-600 shadow-inner"
+                      />
+                    )
+                  ) : (
+                    <input
+                      type="text"
+                      value={selectedModel}
+                      onChange={(e) => setSelectedModel(e.target.value)}
+                      placeholder="meta-llama/llama-4-maverick"
+                      className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-xs text-white font-mono focus:border-indigo-500/50 focus:ring-1 focus:ring-indigo-500/30 outline-none transition-all placeholder:text-slate-600 shadow-inner"
+                    />
+                  )}
+                  {apiProvider === "openrouter" && (
+                    <p className="text-[9px] text-slate-600 font-mono">
+                      Browse models at{" "}
+                      <a href="https://openrouter.ai/models" target="_blank" rel="noreferrer" className="text-indigo-400 hover:text-indigo-300 underline">
+                        openrouter.ai/models
+                      </a>
+                    </p>
+                  )}
+                </div>
+
+                {/* Current Config Summary */}
+                <div className="bg-white/[0.02] border border-white/5 rounded-xl p-4 space-y-1.5">
+                  <p className="text-[9px] font-mono text-slate-500 uppercase tracking-widest">Active Configuration</p>
+                  <div className="flex items-center gap-2">
+                    <span className={`w-1.5 h-1.5 rounded-full ${apiKey ? "bg-emerald-500 shadow-[0_0_6px_rgba(16,185,129,0.6)]" : "bg-red-500"}`}></span>
+                    <span className="text-[11px] text-white/80 font-mono">
+                      {apiProvider.toUpperCase()} → {selectedModel || "not set"}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Footer */}
+              <div className="px-6 py-4 border-t border-white/5 flex gap-3">
+                <button
+                  onClick={() => setShowSettings(false)}
+                  className="flex-1 py-3 bg-white/5 hover:bg-white/10 text-white/60 rounded-xl text-xs font-medium transition-all border border-white/5"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => { saveSettings(); setShowSettings(false); }}
+                  className="flex-1 py-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-semibold transition-all shadow-[0_4px_20px_rgba(99,102,241,0.3)] active:scale-[0.98]"
+                >
+                  {settingsSaved ? "✓ Saved!" : "Save & Apply"}
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+
       <div className="flex-1 grid grid-cols-1 lg:grid-cols-[1fr_auto] overflow-hidden relative">
         <main className="relative min-w-0 h-full overflow-hidden">
           {/* Unified Office Dashboard HUD */}
@@ -1104,22 +1314,22 @@ export default function Page() {
               <div className="absolute top-[-100px] right-[-100px] w-[300px] h-[300px] bg-indigo-500/10 rounded-full blur-[100px] pointer-events-none"></div>
 
               {/* Console Header */}
-              <div className="px-6 py-5 border-b border-white/5 flex items-center justify-between relative z-10 bg-white/[0.01]">
-                <div className="flex items-center gap-4">
-                  <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-500/20 to-purple-500/10 border border-indigo-500/20 flex items-center justify-center shadow-inner">
-                    <Terminal size={18} className="text-indigo-400" />
+              <div className="px-5 py-4 flex items-center justify-between relative z-10">
+                <div className="flex items-center gap-3.5">
+                  <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-indigo-500/20 via-violet-500/10 to-transparent border border-indigo-500/15 flex items-center justify-center shadow-[0_0_20px_rgba(99,102,241,0.1)] gradient-border">
+                    <Terminal size={17} className="text-indigo-400" />
                   </div>
-                  <div className="flex flex-col gap-1">
-                    <h3 className="font-sans text-[15px] font-semibold text-slate-100 tracking-tight">
+                  <div className="flex flex-col">
+                    <h3 className="font-sans text-[14px] font-semibold text-white tracking-tight leading-none">
                       Workspace
                     </h3>
-                    <div className="flex items-center gap-2">
-                      <span className="font-sans text-[11px] text-emerald-400 flex items-center gap-1.5 font-medium">
-                        <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full shadow-[0_0_8px_rgba(16,185,129,0.6)] animate-pulse"></span>
+                    <div className="flex items-center gap-2 mt-1.5">
+                      <span className="font-sans text-[10px] text-emerald-400 flex items-center gap-1.5 font-medium">
+                        <span className="w-[5px] h-[5px] bg-emerald-400 rounded-full status-pulse"></span>
                         Online
                       </span>
-                      <div className="w-1 h-1 bg-slate-700 rounded-full shrink-0"></div>
-                      <span className="font-sans text-[11px] text-slate-400 font-medium">
+                      <span className="text-white/10">·</span>
+                      <span className="font-sans text-[10px] text-slate-400/80 font-medium">
                         {characterList.length} Active Staff
                       </span>
                     </div>
@@ -1127,52 +1337,52 @@ export default function Page() {
                 </div>
                 <button
                   onClick={() => setHudIsCollapsed(!hudIsCollapsed)}
-                  className="w-8 h-8 flex items-center justify-center text-slate-400 hover:text-white hover:bg-slate-800 transition-all rounded-lg"
+                  className="w-7 h-7 flex items-center justify-center text-slate-500 hover:text-white hover:bg-white/5 transition-all rounded-lg"
                 >
                   <ChevronRight
-                    size={18}
-                    className={`transition-transform duration-700 cubic-bezier(0.19,1,0.22,1) ${hudIsCollapsed ? "" : "rotate-180"}`}
+                    size={16}
+                    className={`transition-transform duration-500 ease-[cubic-bezier(0.19,1,0.22,1)] ${hudIsCollapsed ? "" : "rotate-180"}`}
                   />
                 </button>
               </div>
 
               {!hudIsCollapsed && (
                 <>
-                  {/* Module Selector */}
-                  <div className="flex p-2 bg-slate-900/40 border-b border-slate-800/60 gap-1.5 relative z-10">
+                  {/* Module Selector - Pill Tabs */}
+                  <div className="flex mx-4 mb-1 p-1 bg-white/[0.02] rounded-xl border border-white/[0.04] gap-1">
                     {[
                       {
                         id: "dashboard",
                         label: "Monitor",
-                        icon: <Activity size={14} />,
+                        icon: <Activity size={13} />,
                       },
                       {
                         id: "roster",
-                        label: "Directory",
-                        icon: <Settings2 size={14} />,
+                        label: "Staff",
+                        icon: <Settings2 size={13} />,
                       },
                       {
                         id: "relay",
                         label: "Comms",
-                        icon: <Radio size={14} />,
+                        icon: <Radio size={13} />,
                       },
                     ].map((tab) => (
                       <button
                         key={tab.id}
                         onClick={() => setHudTab(tab.id as any)}
-                        className={`flex-1 py-2 flex items-center justify-center gap-2 font-sans text-[12px] font-medium transition-all relative rounded-lg ${
+                        className={`flex-1 py-2 flex items-center justify-center gap-1.5 font-sans text-[11px] font-medium transition-all relative rounded-lg tab-pill ${
                           hudTab === tab.id
-                            ? "text-white bg-slate-800 shadow-sm ring-1 ring-white/10"
-                            : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/50"
+                            ? "text-white tab-pill-active"
+                            : "text-slate-500 hover:text-slate-300 hover:bg-white/[0.03]"
                         }`}
                       >
-                        <span className="relative z-10">{tab.icon}</span>
+                        <span className={`relative z-10 ${hudTab === tab.id ? "text-indigo-400" : ""}`}>{tab.icon}</span>
                         <span className="relative z-10">{tab.label}</span>
                       </button>
                     ))}
                   </div>
 
-                  <div className="p-6 min-h-[480px] flex flex-col gap-6 relative">
+                  <div className="px-5 pb-5 pt-4 min-h-[480px] flex flex-col gap-5 relative">
                     <AnimatePresence mode="wait">
                       {hudTab === "dashboard" && (
                         <motion.div
@@ -1181,16 +1391,16 @@ export default function Page() {
                           animate={{ opacity: 1, scale: 1 }}
                           exit={{ opacity: 0, scale: 0.98 }}
                           transition={{ duration: 0.3, ease: "circOut" }}
-                          className="flex flex-col gap-5"
+                          className="flex flex-col gap-4"
                         >
                           {/* Main Stats */}
-                          <div className="grid grid-cols-2 gap-4">
-                            <div className="bg-slate-800/40 border border-slate-700/50 p-5 rounded-2xl shadow-sm transition-transform hover:-translate-y-0.5">
-                              <span className="font-sans text-[11px] text-slate-400 font-medium tracking-wide block mb-2">
-                                Ongoing Projects
+                          <div className="grid grid-cols-2 gap-3">
+                            <div className="glass-card p-4 rounded-2xl group cursor-default">
+                              <span className="font-sans text-[10px] text-slate-500 font-medium tracking-wider uppercase block mb-3">
+                                Active Tasks
                               </span>
-                              <div className="flex items-baseline gap-3">
-                                <span className="text-3xl font-sans font-semibold text-white tracking-tight">
+                              <div className="flex items-baseline gap-2">
+                                <span className="text-2xl font-sans font-bold text-white tracking-tight">
                                   {
                                     characterList.filter(
                                       (c) =>
@@ -1200,58 +1410,52 @@ export default function Page() {
                                     ).length
                                   }
                                 </span>
-                                <div className="flex flex-col">
-                                  <span className="text-[10px] text-indigo-400 font-medium">
-                                    In Progress
-                                  </span>
-                                </div>
+                                <span className="text-[10px] text-indigo-400/80 font-medium bg-indigo-500/10 px-1.5 py-0.5 rounded-md">
+                                  In Progress
+                                </span>
                               </div>
                             </div>
-                            <div className="bg-slate-800/40 border border-slate-700/50 p-5 rounded-2xl shadow-sm transition-transform hover:-translate-y-0.5">
-                              <span className="font-sans text-[11px] text-slate-400 font-medium tracking-wide block mb-2">
+                            <div className="glass-card p-4 rounded-2xl group cursor-default">
+                              <span className="font-sans text-[10px] text-slate-500 font-medium tracking-wider uppercase block mb-3">
                                 Total Staff
                               </span>
-                              <div className="flex items-baseline gap-3">
-                                <span className="text-3xl font-sans font-semibold text-white tracking-tight">
+                              <div className="flex items-baseline gap-2">
+                                <span className="text-2xl font-sans font-bold text-white tracking-tight">
                                   {characterList.length < 10 ? "0" : ""}
                                   {characterList.length}
                                 </span>
-                                <div className="flex flex-col">
-                                  <span className="text-[10px] text-emerald-400 font-medium">
-                                    In Office
-                                  </span>
-                                </div>
+                                <span className="text-[10px] text-emerald-400/80 font-medium bg-emerald-500/10 px-1.5 py-0.5 rounded-md">
+                                  Online
+                                </span>
                               </div>
                             </div>
                           </div>
 
-                          {/* Activity Grid */}
-                          <div className="flex flex-col gap-4">
-                            <div className="flex items-center justify-between px-2">
-                              <div className="flex items-center gap-2">
-                                <div className="w-1.5 h-1.5 bg-indigo-500 rounded-full"></div>
-                                <span className="font-sans text-[11px] text-slate-400 font-medium tracking-wide">
-                                  Staff Directory
-                                </span>
-                              </div>
+                          {/* Staff List */}
+                          <div className="flex flex-col gap-3">
+                            <div className="flex items-center justify-between px-1">
+                              <span className="font-sans text-[10px] text-slate-500 font-medium tracking-wider uppercase">
+                                Staff Overview
+                              </span>
                             </div>
 
-                            <div className="grid grid-cols-1 gap-2.5 max-h-[220px] overflow-y-auto pr-2 custom-scrollbar">
+                            <div className="grid grid-cols-1 gap-2 max-h-[220px] overflow-y-auto pr-1">
                               {characterList.map((c, i) => (
                                 <motion.div
                                   key={c.id}
-                                  initial={{ opacity: 0, y: 10 }}
+                                  initial={{ opacity: 0, y: 8 }}
                                   animate={{ opacity: 1, y: 0 }}
-                                  transition={{ delay: i * 0.05 }}
-                                  className="group/node bg-slate-800/30 border border-slate-800/80 p-3.5 rounded-xl flex justify-between items-center transition-all hover:bg-slate-800/80 hover:border-slate-700"
+                                  transition={{ delay: i * 0.04, duration: 0.3 }}
+                                  className="group/node glass-card p-3 rounded-xl flex justify-between items-center cursor-pointer"
+                                  onClick={() => {
+                                    setSelectedAgentId(c.id);
+                                  }}
                                 >
-                                  <div className="flex items-center gap-4">
+                                  <div className="flex items-center gap-3">
                                     <div className="relative">
-                                      <div
-                                        className={`w-10 h-10 rounded-[12px] overflow-hidden border border-slate-700 bg-slate-900 flex items-center justify-center shadow-inner`}
-                                      >
+                                      <div className="w-9 h-9 rounded-xl overflow-hidden border border-white/[0.06] bg-[#0a0c10] flex items-center justify-center">
                                         <div
-                                          className="w-8 h-10 scale-[1.7] relative -top-0.5"
+                                          className="w-7 h-9 scale-[1.6] relative -top-0.5"
                                           style={{
                                             backgroundImage: `url(/char_${c.spriteIndex}.png)`,
                                             backgroundPosition: "16.66% 0%",
@@ -1260,33 +1464,31 @@ export default function Page() {
                                           }}
                                         />
                                       </div>
-                                      {c.isProcessingTask && (
-                                        <div className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-indigo-500 rounded-full border-2 border-slate-900 animate-pulse"></div>
-                                      )}
+                                      <div className={`absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border-2 border-[#0f1115] ${c.isProcessingTask ? "bg-indigo-400 status-pulse" : "bg-slate-600"}`}></div>
                                     </div>
-                                    <div className="flex flex-col gap-0.5">
-                                      <span className="text-[13px] font-semibold text-slate-100 tracking-tight">
+                                    <div className="flex flex-col">
+                                      <span className="text-[12px] font-semibold text-white/90 tracking-tight leading-none mb-0.5">
                                         {c.name}
                                       </span>
-                                      <span className="text-[11px] text-slate-400">
+                                      <span className="text-[10px] text-slate-500 font-medium">
                                         {c.profession}
                                       </span>
                                     </div>
                                   </div>
 
-                                  <div className="flex flex-col items-end gap-2 pr-2">
+                                  <div className="flex items-center gap-2">
                                     <span
-                                      className={`text-[10px] font-medium tracking-wide ${c.isProcessingTask ? "text-indigo-400" : "text-slate-500"}`}
+                                      className={`text-[9px] font-medium tracking-wide px-2 py-0.5 rounded-md ${c.isProcessingTask ? "text-indigo-400 bg-indigo-500/10" : "text-slate-600 bg-white/[0.03]"}`}
                                     >
                                       {c.isProcessingTask ? "Working" : "Idle"}
                                     </span>
                                     {c.isProcessingTask && (
-                                      <div className="flex gap-1">
+                                      <div className="flex gap-0.5">
                                         {Array.from({ length: 3 }).map(
                                           (_, idx) => (
                                             <div
                                               key={idx}
-                                              className="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-pulse"
+                                              className="w-1 h-1 rounded-full bg-indigo-400 animate-pulse"
                                               style={{
                                                 animationDelay: `${idx * 150}ms`,
                                               }}

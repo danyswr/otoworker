@@ -107,7 +107,7 @@ export function ChatSidebar({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!input.trim() || isLoading) return;
+    if (!input.trim()) return;
     onAssignTask(input.trim(), priority);
     setInput("");
   };
@@ -198,19 +198,19 @@ export function ChatSidebar({
             className="fixed right-0 top-10 z-[100] bg-[#09090b]/90 border border-slate-800 border-r-0 rounded-l-xl p-3 pl-4 text-slate-300 hover:text-white backdrop-blur-xl shadow-2xl transition-colors group flex items-center gap-4 cursor-pointer"
           >
             <ChevronLeft
-              size={16}
-              className="group-hover:-translate-x-1 transition-transform text-slate-500"
+              size={14}
+              className="group-hover:-translate-x-1 transition-transform text-slate-600"
             />
-            <div className="flex items-center gap-3 border-l border-white/10 pl-3">
+            <div className="flex items-center gap-2.5 border-l border-white/[0.06] pl-2.5">
               <div className="flex flex-col items-end">
-                <span className="text-[10px] font-mono uppercase tracking-widest text-slate-500">
-                  Active Unit
+                <span className="text-[9px] font-mono uppercase tracking-widest text-slate-600">
+                  Active
                 </span>
-                <span className="text-xs font-bold font-sans text-white">
+                <span className="text-[11px] font-semibold font-sans text-white/90">
                   {agent.name}
                 </span>
               </div>
-              <div className="w-8 h-8 bg-black/40 border border-white/10 rounded-lg overflow-hidden relative shadow-inner flex items-center justify-center">
+              <div className="w-8 h-8 bg-[#0a0c10] border border-white/[0.06] rounded-xl overflow-hidden relative flex items-center justify-center">
                 <div
                   className="w-6 h-8 scale-[1.5]"
                   style={{
@@ -222,7 +222,7 @@ export function ChatSidebar({
                   }}
                 />
                 <div
-                  className={`absolute bottom-0 right-0 w-2 h-2 rounded-full border border-[#09090b] ${agent?.state === CharacterState.WORK ? "bg-emerald-500" : agent?.state === CharacterState.IDLE ? "bg-slate-400" : "bg-blue-500"}`}
+                  className={`absolute bottom-0 right-0 w-2 h-2 rounded-full border border-[#0a0c10] ${agent?.state === CharacterState.WORK ? "bg-emerald-400 status-pulse" : agent?.state === CharacterState.IDLE ? "bg-slate-500" : "bg-indigo-400"}`}
                 ></div>
               </div>
             </div>
@@ -238,18 +238,18 @@ export function ChatSidebar({
             animate="visible"
             exit="exit"
             variants={sidebarVariants}
-            className="fixed right-4 top-4 bottom-4 w-[380px] bg-[#09090b]/95 backdrop-blur-3xl flex flex-col font-sans text-white z-[100] shadow-2xl rounded-3xl overflow-hidden border border-slate-800"
+            className="fixed right-4 top-4 bottom-4 w-[400px] bg-[#0a0c10]/90 backdrop-blur-[60px] flex flex-col font-sans text-white z-[100] shadow-[0_20px_80px_rgba(0,0,0,0.6)] rounded-[28px] overflow-hidden border border-white/[0.06] gradient-border"
           >
             <div className="flex flex-col h-full overflow-hidden bg-transparent">
               <>
                 {/* Profile Header */}
-                <div className="px-5 py-4 border-b border-white/5 relative overflow-hidden shrink-0 bg-white/[0.01] flex flex-col gap-4">
+                <div className="px-5 pt-5 pb-3 relative shrink-0 flex flex-col gap-5">
                   <div className="flex justify-between items-start relative z-10">
-                    <div className="flex items-center gap-3">
-                      <div className="relative group">
-                        <div className="w-12 h-12 bg-[#0f1115] border border-white/10 rounded-[14px] overflow-hidden relative flex items-center justify-center z-10 transition-transform group-hover:scale-105 duration-300 shadow-sm">
+                    <div className="flex gap-3.5">
+                      <div className="relative group shrink-0">
+                        <div className="w-12 h-12 bg-gradient-to-b from-white/[0.08] to-transparent border border-white/[0.1] rounded-full overflow-hidden relative flex items-center justify-center z-10 shadow-lg backdrop-blur-md">
                           <div
-                            className="w-8 h-10 scale-[1.4]"
+                            className="w-8 h-10 scale-[1.5] translate-y-1"
                             style={{
                               backgroundImage: `url(/char_${agent.spriteIndex}.png)`,
                               backgroundPosition: "16.666% 0%",
@@ -260,75 +260,73 @@ export function ChatSidebar({
                           />
                         </div>
                         <div
-                          className={`absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full border-[2.5px] border-[#0f1115] z-20 ${agent?.state === CharacterState.WORK ? "bg-emerald-400" : agent?.state === CharacterState.IDLE ? "bg-slate-400" : "bg-indigo-400"}`}
+                          className={`absolute bottom-0 right-0 w-3.5 h-3.5 rounded-full border-[2.5px] border-[#0a0c10] z-20 shadow-sm ${agent?.state === CharacterState.WORK ? "bg-emerald-400 status-pulse" : agent?.state === CharacterState.IDLE ? "bg-slate-400" : "bg-indigo-400 status-pulse"}`}
                         ></div>
                       </div>
-                      <div className="flex flex-col">
-                        <h2 className="text-[15px] font-semibold tracking-tight text-white leading-none mb-1">
+                      <div className="flex flex-col justify-center">
+                        <h2 className="text-[16px] font-bold tracking-tight text-white mb-0.5 flex items-center gap-2">
                           {agent.name}
-                        </h2>
-                        <div className="flex items-center gap-2">
-                          <span className="text-[12px] text-slate-400 capitalize">
-                            {agent.profession}
-                          </span>
-                          <span className="w-1 h-1 rounded-full bg-slate-700"></span>
                           <span
-                            className={`text-[11px] font-medium capitalize ${agent?.state === CharacterState.WORK ? "text-emerald-400" : "text-slate-500"}`}
+                            className={`text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-md ${agent?.state === CharacterState.WORK ? "text-emerald-400 bg-emerald-400/10" : "text-slate-400 bg-white/5"}`}
                           >
                             {agent.state}
+                          </span>
+                        </h2>
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-[12px] text-indigo-300/80 font-medium tracking-wide">
+                            {agent.profession}
                           </span>
                         </div>
                       </div>
                     </div>
-                    <div className="flex items-center gap-1">
+                    <div className="flex items-center gap-1 bg-white/[0.03] border border-white/[0.05] rounded-[14px] p-1 shadow-inner">
                       <button
                         onClick={() => setShowTerminateConfirm(true)}
-                        className="p-1.5 text-red-400 hover:text-white hover:bg-red-500/80 rounded-lg transition-all"
-                        title="Fire Worker"
+                        className="p-1.5 text-slate-500 hover:text-red-400 hover:bg-red-500/10 rounded-[10px] transition-all"
+                        title="Terminate"
                       >
-                        <Trash2 size={16} />
+                        <Trash2 size={13} />
                       </button>
                       <button
                         onClick={() => setIsMinimized(true)}
-                        className="p-1.5 text-slate-400 hover:text-white hover:bg-slate-800/80 rounded-lg transition-all"
+                        className="p-1.5 text-slate-500 hover:text-white hover:bg-white/10 rounded-[10px] transition-all"
                         title="Minimize"
                       >
-                        <ChevronRight size={16} />
+                        <ChevronRight size={13} />
                       </button>
                       <button
                         onClick={onClose}
-                        className="p-1.5 text-slate-400 hover:text-white hover:bg-slate-800/80 rounded-lg transition-all"
+                        className="p-1.5 text-slate-500 hover:text-white hover:bg-white/10 rounded-[10px] transition-all"
                         title="Close"
                       >
-                        <X size={16} />
+                        <X size={13} />
                       </button>
                     </div>
                   </div>
 
-                  {/* Navigation Segmented Control */}
-                  <div className="flex p-1 bg-[#090b0f] rounded-xl border border-white/5 shadow-inner">
-                    {tabs.map((tab) => (
-                      <button
-                        key={tab.id}
-                        onClick={() => setActiveTab(tab.id as any)}
-                        className={`flex-1 py-1.5 rounded-lg flex items-center justify-center gap-2 transition-all duration-200 ${
-                          activeTab === tab.id
-                            ? "bg-slate-800/80 text-white shadow-sm ring-1 ring-white/10"
-                            : "text-slate-400 hover:text-white hover:bg-slate-800/30"
-                        }`}
-                      >
-                        <div
-                          className={
-                            activeTab === tab.id ? "text-indigo-400" : ""
-                          }
+                  {/* Minimalist Tabs */}
+                  <div className="flex gap-2">
+                    {tabs.map((tab) => {
+                      const isActive = activeTab === tab.id;
+                      return (
+                        <button
+                          key={tab.id}
+                          onClick={() => setActiveTab(tab.id as any)}
+                          className={`flex-1 py-2 rounded-xl flex items-center justify-center gap-2 transition-all duration-300 border ${
+                            isActive
+                              ? "bg-indigo-500/15 border-indigo-500/30 text-indigo-300 shadow-[0_0_15px_rgba(99,102,241,0.1)]"
+                              : "bg-white/[0.01] border-white/[0.04] text-slate-500 hover:text-slate-300 hover:bg-white/[0.03]"
+                          }`}
                         >
-                          {tab.icon}
-                        </div>
-                        <span className="text-[12px] font-medium">
-                          {tab.label}
-                        </span>
-                      </button>
-                    ))}
+                          <div className={`${isActive ? "text-indigo-400 drop-shadow-md" : "text-slate-500"}`}>
+                            {tab.icon}
+                          </div>
+                          <span className={`text-[11px] ${isActive ? "font-bold tracking-wide" : "font-medium"}`}>
+                            {tab.label}
+                          </span>
+                        </button>
+                      );
+                    })}
                   </div>
                 </div>
 
@@ -542,7 +540,7 @@ export function ChatSidebar({
                             </div>
 
                             {/* Info Grid */}
-                            <div className="grid grid-cols-2 gap-px bg-white/5 rounded-2xl overflow-hidden border border-white/5 shadow-sm">
+                            <div className="grid grid-cols-2 gap-px bg-white/[0.03] rounded-2xl overflow-hidden border border-white/[0.04]">
                               {[
                                 {
                                   label: "Identifier",
@@ -570,12 +568,12 @@ export function ChatSidebar({
                               ].map((item, i) => (
                                 <div
                                   key={i}
-                                  className={`bg-[#02040a]/80 p-5 flex flex-col gap-1.5 ${item.label === "AI_Model" ? "col-span-2" : ""}`}
+                                  className={`bg-[#060810]/80 p-4 flex flex-col gap-1.5 ${item.label === "AI_Model" ? "col-span-2" : ""}`}
                                 >
-                                  <span className="text-[9px] font-mono text-white/40 uppercase tracking-widest">
+                                  <span className="text-[9px] font-mono text-white/30 uppercase tracking-widest">
                                     {item.label}
                                   </span>
-                                  <span className="text-xs font-bold text-white/90 uppercase tracking-wide truncate">
+                                  <span className="text-[11px] font-semibold text-white/85 uppercase tracking-wide truncate">
                                     {item.val}
                                   </span>
                                 </div>
@@ -583,9 +581,9 @@ export function ChatSidebar({
                             </div>
 
                             {/* Profile Bio */}
-                            <div className="bg-white/[0.02] border border-white/5 rounded-2xl p-5 shadow-sm relative group">
-                              <div className="absolute inset-0 bg-blue-500/5 opacity-0 group-hover:opacity-100 transition-opacity rounded-2xl pointer-events-none"></div>
-                              <p className="text-xs text-white/60 leading-relaxed font-sans italic relative z-10">
+                            <div className="bg-white/[0.015] border border-white/[0.04] rounded-2xl p-4 relative group">
+                              <div className="absolute inset-0 bg-indigo-500/[0.03] opacity-0 group-hover:opacity-100 transition-opacity rounded-2xl pointer-events-none"></div>
+                              <p className="text-[11px] text-white/50 leading-relaxed font-sans italic relative z-10">
                                 {agent.bio ||
                                   "Encrypted dossier. No background signal detected."}
                               </p>
@@ -625,11 +623,11 @@ export function ChatSidebar({
                                         {Math.round(stat.val)}%
                                       </span>
                                     </div>
-                                    <div className="h-1.5 bg-black/40 rounded-full overflow-hidden border border-white/5">
+                                    <div className="h-1 bg-white/[0.04] rounded-full overflow-hidden">
                                       <motion.div
                                         initial={{ width: 0 }}
                                         animate={{ width: `${stat.val}%` }}
-                                        className={`h-full ${stat.color} rounded-full shadow-[0_0_10px_rgba(255,255,255,0.2)]`}
+                                        className={`h-full ${stat.color} rounded-full`}
                                       ></motion.div>
                                     </div>
                                   </div>
@@ -1367,20 +1365,18 @@ export function ChatSidebar({
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
-                        className="flex-1 flex flex-col min-h-0 bg-transparent"
+                        className="absolute inset-0 flex flex-col bg-transparent"
                       >
-                        <div className="px-6 py-4 bg-slate-900/60 border-b border-white/5 flex items-center justify-between shadow-sm sticky top-0 z-10 backdrop-blur-xl">
+                        <div className="px-5 py-3 bg-[#0a0c10]/80 border-b border-white/[0.04] flex items-center justify-between sticky top-0 z-10 backdrop-blur-2xl">
                           <div className="flex items-center gap-2">
-                            <Activity size={14} className="text-indigo-400" />
-                            <span className="text-[12px] text-slate-200 font-medium tracking-wide">
-                              Comms Feed
+                            <Activity size={13} className="text-indigo-400/70" />
+                            <span className="text-[11px] text-slate-300 font-medium">
+                              Chat
                             </span>
                           </div>
-                          <div className="flex items-center gap-2 text-slate-500">
-                            <span className="text-[11px] font-medium">
-                              {messages.length} Messages
-                            </span>
-                          </div>
+                          <span className="text-[10px] text-slate-500/80 font-medium bg-white/[0.03] px-2 py-0.5 rounded-md">
+                            {messages.length} msg
+                          </span>
                         </div>
 
                         <div className="flex-1 overflow-y-auto scrollbar-thin p-6 flex flex-col gap-6 relative">
@@ -1433,25 +1429,25 @@ export function ChatSidebar({
                                     className="w-full flex flex-col"
                                   >
                                     {m.role === "user" ? (
-                                      <div className="flex flex-col items-end pl-10">
-                                        <div className="px-4 py-3 bg-indigo-600 text-white font-sans text-[13px] rounded-2xl rounded-tr-sm shadow-md relative leading-relaxed max-w-[90%] break-words">
+                                      <div className="flex flex-col items-end pl-12 mb-1">
+                                        <div className="px-3.5 py-2.5 bg-gradient-to-br from-indigo-500/10 to-violet-500/10 border border-indigo-500/20 text-white font-sans text-[13px] rounded-[18px] rounded-tr-[4px] relative leading-relaxed max-w-[85%] break-words shadow-sm">
                                           {cleanedContent}
                                         </div>
                                       </div>
                                     ) : m.role === "system" ? (
-                                      <div className="flex flex-col items-start px-4 py-3 w-full border border-amber-500/20 bg-amber-500/5 rounded-2xl rounded-tl-sm relative my-2 shadow-sm">
-                                        <div className="text-[11px] text-amber-500 font-medium mb-1.5 flex items-center gap-1.5">
-                                          <Brain size={12} />
-                                          System Thought
+                                      <div className="flex flex-col items-start px-3.5 py-2.5 w-full border border-white/[0.04] bg-white/[0.02] rounded-[18px] rounded-tl-[4px] relative my-1.5 backdrop-blur-md">
+                                        <div className="text-[10px] text-indigo-400/80 font-medium mb-1 flex items-center gap-1.5 uppercase tracking-wide">
+                                          <Brain size={10} />
+                                          System Logic
                                         </div>
-                                        <div className="text-slate-300 font-sans text-[13px] leading-relaxed break-words whitespace-pre-wrap">
+                                        <div className="text-slate-300/80 font-sans text-[12px] leading-relaxed break-words whitespace-pre-wrap">
                                           {m.content.replace("[Thought]: ", "")}
                                         </div>
                                       </div>
                                     ) : (
-                                      <div className="flex flex-col items-start pr-10">
-                                        <div className="px-4 py-3 bg-slate-800 border border-slate-700/50 text-slate-100 font-sans text-[13px] rounded-2xl rounded-tl-sm shadow-sm relative group hover:bg-slate-700/50 transition-colors">
-                                          <div className="text-[11px] text-indigo-300 font-medium mb-1 flex items-center gap-1.5">
+                                      <div className="flex flex-col items-start pr-12 mb-1">
+                                        <div className="px-3.5 py-2.5 bg-[#0a0c10]/80 border border-white/[0.06] text-slate-200 font-sans text-[13px] rounded-[18px] rounded-tl-[4px] relative group shadow-sm backdrop-blur-md">
+                                          <div className="text-[10px] text-indigo-400 font-semibold mb-0.5 flex items-center gap-1.5 tracking-wide">
                                             {agent?.name || "Agent"}
                                           </div>
                                           <div className="leading-relaxed whitespace-pre-wrap break-words">
@@ -1467,18 +1463,18 @@ export function ChatSidebar({
                           </AnimatePresence>
                           {isLoading && (
                             <motion.div
-                              initial={{ opacity: 0, x: -10 }}
+                              initial={{ opacity: 0, x: -8 }}
                               animate={{ opacity: 1, x: 0 }}
-                              className="p-3 bg-slate-800/50 border border-slate-700/50 text-slate-400 text-[11px] font-medium rounded-2xl flex items-center gap-3 w-fit shadow-sm"
+                              className="p-2.5 bg-white/[0.03] border border-white/[0.04] text-slate-400 text-[11px] font-medium rounded-2xl flex items-center gap-2.5 w-fit"
                             >
                               <div className="flex gap-1">
-                                <div className="w-1.5 h-1.5 bg-indigo-400 rounded-full animate-bounce"></div>
+                                <div className="w-1.5 h-1.5 bg-indigo-400/70 rounded-full animate-bounce"></div>
                                 <div
-                                  className="w-1.5 h-1.5 bg-indigo-400 rounded-full animate-bounce"
+                                  className="w-1.5 h-1.5 bg-indigo-400/70 rounded-full animate-bounce"
                                   style={{ animationDelay: "150ms" }}
                                 ></div>
                                 <div
-                                  className="w-1.5 h-1.5 bg-indigo-400 rounded-full animate-bounce"
+                                  className="w-1.5 h-1.5 bg-indigo-400/70 rounded-full animate-bounce"
                                   style={{ animationDelay: "300ms" }}
                                 ></div>
                               </div>
@@ -1490,72 +1486,55 @@ export function ChatSidebar({
                         {/* Input Region */}
                         <form
                           onSubmit={handleSubmit}
-                          className="p-4 bg-[#090b0f] border-t border-white/5 relative z-10 shrink-0 backdrop-blur-3xl"
+                          className="p-4 bg-gradient-to-t from-[#06080c] to-transparent border-t border-white/[0.04] relative z-10 shrink-0"
                         >
-                          <div className="flex flex-col gap-3">
-                            <div className="flex justify-between items-center px-1">
-                              <div className="flex items-center gap-2">
-                                <span className="text-[11px] font-medium text-slate-500">
-                                  Priority
-                                </span>
-                                <select
-                                  value={priority}
-                                  onChange={(e) =>
-                                    setPriority(e.target.value as any)
-                                  }
-                                  className="bg-slate-800/50 border border-slate-700/50 text-slate-300 text-[11px] font-medium rounded-md px-2 py-1 outline-none appearance-none pr-6 cursor-pointer hover:bg-slate-700/80 transition-colors"
-                                  style={{
-                                    backgroundImage: `url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e")`,
-                                    backgroundRepeat: "no-repeat",
-                                    backgroundPosition: "right 0.25rem center",
-                                    backgroundSize: "1em",
-                                  }}
-                                >
-                                  <option value="low">Low</option>
-                                  <option value="medium">Medium</option>
-                                  <option value="high">High</option>
-                                </select>
-                              </div>
-                            </div>
-                            <div className="flex items-end gap-2">
-                              <div className="relative flex-1 group">
-                                <textarea
-                                  className="w-full bg-[#0f1115] rounded-xl border border-white/10 p-3 pr-10 text-[13px] h-12 min-h-[48px] max-h-32 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/50 text-white font-sans resize-y shadow-inner placeholder:text-slate-600 transition-all font-medium py-3.5"
-                                  placeholder="Message or assign task..."
-                                  value={input}
-                                  onChange={(e) => setInput(e.target.value)}
-                                  disabled={
-                                    isLoading ||
-                                    agent?.state === CharacterState.WORK
-                                  }
-                                  onKeyDown={(e) => {
-                                    if (e.key === "Enter" && !e.shiftKey) {
-                                      e.preventDefault();
-                                      handleSubmit(e);
-                                    }
-                                  }}
-                                />
+                          <div className="bg-[#0a0c10] border border-white/[0.08] rounded-2xl p-2 shadow-lg flex flex-col gap-2 transition-all focus-within:border-indigo-500/40 focus-within:ring-1 focus-within:ring-indigo-500/20">
+                            <textarea
+                              className="w-full bg-transparent p-2 text-[13px] min-h-[40px] max-h-32 focus:outline-none text-white font-sans resize-none placeholder:text-slate-600 transition-all font-medium leading-relaxed"
+                              placeholder="Message or assign a task..."
+                              value={input}
+                              onChange={(e) => {
+                                setInput(e.target.value);
+                                e.target.style.height = 'auto';
+                                e.target.style.height = (e.target.scrollHeight) + 'px';
+                              }}
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter" && !e.shiftKey) {
+                                  e.preventDefault();
+                                  handleSubmit(e as any);
+                                }
+                              }}
+                            />
+                            
+                            <div className="flex items-center justify-between px-1">
+                              <div className="flex items-center gap-1">
+                                {["low", "medium", "high"].map((p) => (
+                                  <button
+                                    key={p}
+                                    type="button"
+                                    onClick={() => setPriority(p as any)}
+                                    className={`px-2.5 py-1 text-[9px] font-bold rounded-lg transition-all uppercase tracking-wider ${
+                                      priority === p
+                                        ? p === "high" ? "bg-red-500/15 text-red-400"
+                                        : p === "medium" ? "bg-amber-500/15 text-amber-400"
+                                        : "bg-indigo-500/15 text-indigo-400"
+                                        : "text-slate-500 hover:text-slate-300 hover:bg-white/[0.03]"
+                                    }`}
+                                  >
+                                    {p}
+                                  </button>
+                                ))}
                               </div>
                               <button
                                 type="submit"
-                                disabled={
-                                  !input.trim() ||
-                                  isLoading ||
-                                  !agent ||
-                                  agent?.state === CharacterState.WORK
-                                }
-                                className={`w-12 h-12 shrink-0 rounded-xl flex items-center justify-center transition-all shadow-sm ${
-                                  priority === "high"
-                                    ? "bg-red-500 hover:bg-red-600 text-white"
-                                    : priority === "medium"
-                                      ? "bg-amber-500 hover:bg-amber-600 text-black"
-                                      : "bg-indigo-600 hover:bg-indigo-500 text-white"
-                                } disabled:opacity-50 disabled:cursor-not-allowed`}
+                                disabled={!input.trim() || !agent}
+                                className={`w-8 h-8 rounded-xl flex items-center justify-center transition-all ${
+                                  !input.trim() || !agent
+                                    ? "bg-white/[0.03] text-slate-600 cursor-not-allowed"
+                                    : "bg-indigo-500 text-white shadow-md hover:bg-indigo-400 active:scale-95"
+                                }`}
                               >
-                                <Send
-                                  size={16}
-                                  className="relative right-0.5"
-                                />
+                                <Send size={14} className="relative right-[1px]" />
                               </button>
                             </div>
                           </div>
