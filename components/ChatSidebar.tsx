@@ -239,7 +239,7 @@ export function ChatSidebar({
             animate="visible"
             exit="exit"
             variants={sidebarVariants}
-            className="fixed right-4 top-4 bottom-4 w-[420px] md:w-[420px] lg:w-[440px] glass-panel flex flex-col font-sans text-foreground z-[100] rounded-3xl overflow-hidden gradient-border max-h-screen shadow-2xl"
+            className="fixed right-2 sm:right-4 top-2 sm:top-4 bottom-2 sm:bottom-4 w-[calc(100%-16px)] sm:w-[420px] md:w-[420px] lg:w-[440px] glass-panel flex flex-col font-sans text-foreground z-[100] rounded-2xl sm:rounded-3xl overflow-hidden gradient-border max-h-screen shadow-2xl"
           >
             <div className="flex flex-col h-full overflow-hidden bg-transparent">
               <>
@@ -1370,32 +1370,34 @@ export function ChatSidebar({
                         exit={{ opacity: 0 }}
                         className="absolute inset-0 flex flex-col bg-transparent"
                       >
-                        <div className="px-5 py-3 bg-[#0a0c10]/80 border-b border-white/[0.04] flex items-center justify-between sticky top-0 z-10 backdrop-blur-2xl">
-                          <div className="flex items-center gap-2">
-                            <Activity size={13} className="text-indigo-400/70" />
-                            <span className="text-[11px] text-slate-300 font-medium">
-                              Chat
+                        <div className="px-5 py-4 bg-surface/50 border-b border-white/[0.08] flex items-center justify-between sticky top-0 z-10 backdrop-blur-xl">
+                          <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 rounded-lg bg-primary/15 border border-primary/25 flex items-center justify-center">
+                              <Activity size={14} className="text-primary" strokeWidth={1.8} />
+                            </div>
+                            <span className="text-[12px] text-foreground font-bold font-display uppercase tracking-wide">
+                              Conversation
                             </span>
                           </div>
-                          <span className="text-[10px] text-slate-500/80 font-medium bg-white/[0.03] px-2 py-0.5 rounded-md">
-                            {messages.length} msg
+                          <span className="text-[9px] text-foreground-muted/60 font-mono bg-white/[0.04] px-2.5 py-1 rounded-lg border border-white/[0.06] font-semibold">
+                            {messages.length} messages
                           </span>
                         </div>
 
-                        <div className="flex-1 overflow-y-auto scrollbar-thin p-6 flex flex-col gap-6 relative">
+                        <div className="flex-1 overflow-y-auto scrollbar-thin p-3 sm:p-5 flex flex-col gap-3 sm:gap-4 relative scroll-smooth">
                           <div className="flex-1"></div>
                           <AnimatePresence>
                             {messages.length === 0 ? (
                               <motion.div
-                                initial={{ opacity: 0 }}
-                                animate={{ opacity: 1 }}
-                                className="m-auto text-center py-20 flex flex-col items-center gap-6"
+                                initial={{ opacity: 0, scale: 0.95 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                className="m-auto text-center py-16 flex flex-col items-center gap-5"
                               >
-                                <div className="w-16 h-16 border border-slate-700/50 rounded-2xl flex items-center justify-center bg-slate-800/30 gap-2 shadow-sm relative rotate-3">
-                                  <Radio size={24} className="text-slate-500" />
+                                <div className="w-16 h-16 border border-primary/30 rounded-2xl flex items-center justify-center bg-primary/10 gap-2 shadow-md glow-blue">
+                                  <Radio size={26} className="text-primary/70" strokeWidth={1.5} />
                                 </div>
-                                <div className="text-[13px] font-medium text-slate-400 leading-relaxed max-w-[200px]">
-                                  Send a message or assign a task to begin.
+                                <div className="text-[13px] font-medium text-foreground-muted/80 leading-relaxed max-w-[220px]">
+                                  Start a conversation with {agent?.name}. Send messages to chat or assign tasks.
                                 </div>
                               </motion.div>
                             ) : (
@@ -1412,11 +1414,13 @@ export function ChatSidebar({
                                   return (
                                     <motion.div
                                       key={i}
-                                      className="w-full flex flex-col items-center my-2"
+                                      initial={{ opacity: 0, scale: 0.9 }}
+                                      animate={{ opacity: 1, scale: 1 }}
+                                      className="w-full flex flex-col items-center my-3"
                                     >
-                                      <div className="px-3 py-1.5 bg-slate-800/50 border border-slate-700/50 rounded-full flex items-center gap-2 shadow-sm">
-                                        <div className="w-1.5 h-1.5 bg-indigo-500 rounded-full animate-pulse"></div>
-                                        <span className="text-[10px] text-slate-300 font-medium tracking-wide">
+                                      <div className="px-3.5 py-1.5 bg-primary/15 border border-primary/30 rounded-full flex items-center gap-2 shadow-md hover:border-primary/50 transition-all">
+                                        <div className="w-1.5 h-1.5 bg-primary rounded-full animate-pulse shadow-[0_0_6px_rgba(99,102,241,0.8)]"></div>
+                                        <span className="text-[10px] text-primary/90 font-bold uppercase tracking-widest">
                                           Autonomous Action
                                         </span>
                                       </div>
@@ -1427,33 +1431,34 @@ export function ChatSidebar({
                                 return (
                                   <motion.div
                                     key={i}
-                                    initial={{ opacity: 0, y: 10, scale: 0.98 }}
+                                    initial={{ opacity: 0, y: 12, scale: 0.96 }}
                                     animate={{ opacity: 1, y: 0, scale: 1 }}
+                                    transition={{ type: "spring", stiffness: 300, damping: 25 }}
                                     className="w-full flex flex-col"
                                   >
                                     {m.role === "user" ? (
-                                      <div className="flex flex-col items-end pl-12 mb-1">
-                                        <div className="px-3.5 py-2.5 bg-gradient-to-br from-indigo-500/10 to-violet-500/10 border border-indigo-500/20 text-white font-sans text-[13px] rounded-[18px] rounded-tr-[4px] relative leading-relaxed max-w-[85%] break-words shadow-sm">
+                                      <div className="flex flex-col items-end pl-10 mb-2">
+                                        <div className="px-4 py-3 bg-gradient-to-br from-primary/20 to-secondary/15 border border-primary/30 text-foreground font-sans text-[13px] rounded-2xl rounded-tr-md relative leading-relaxed max-w-[88%] break-words shadow-md hover:border-primary/40 transition-all duration-300">
                                           {cleanedContent}
                                         </div>
                                       </div>
                                     ) : m.role === "system" ? (
-                                      <div className="flex flex-col items-start px-3.5 py-2.5 w-full border border-white/[0.04] bg-white/[0.02] rounded-[18px] rounded-tl-[4px] relative my-1.5 backdrop-blur-md">
-                                        <div className="text-[10px] text-indigo-400/80 font-medium mb-1 flex items-center gap-1.5 uppercase tracking-wide">
-                                          <Brain size={10} />
-                                          System Logic
+                                      <div className="flex flex-col items-start px-4 py-3 w-full border border-primary/20 bg-primary/8 rounded-2xl rounded-tl-md relative my-2 backdrop-blur-md hover:border-primary/30 transition-all duration-300">
+                                        <div className="text-[10px] text-primary/90 font-bold mb-1.5 flex items-center gap-2 uppercase tracking-wider">
+                                          <Brain size={11} strokeWidth={2} />
+                                          System
                                         </div>
                                         <div className="text-slate-300/80 font-sans text-[12px] leading-relaxed break-words whitespace-pre-wrap">
                                           {m.content.replace("[Thought]: ", "")}
                                         </div>
                                       </div>
                                     ) : (
-                                      <div className="flex flex-col items-start pr-12 mb-1">
-                                        <div className="px-3.5 py-2.5 bg-[#0a0c10]/80 border border-white/[0.06] text-slate-200 font-sans text-[13px] rounded-[18px] rounded-tl-[4px] relative group shadow-sm backdrop-blur-md">
-                                          <div className="text-[10px] text-indigo-400 font-semibold mb-0.5 flex items-center gap-1.5 tracking-wide">
+                                      <div className="flex flex-col items-start pr-10 mb-2">
+                                        <div className="px-4 py-3 bg-surface/60 border border-white/[0.08] text-foreground font-sans text-[13px] rounded-2xl rounded-tl-md relative group shadow-md backdrop-blur-md hover:border-primary/20 transition-all duration-300">
+                                          <div className="text-[10px] text-primary font-bold mb-1.5 flex items-center gap-2 tracking-wider uppercase">
                                             {agent?.name || "Agent"}
                                           </div>
-                                          <div className="leading-relaxed whitespace-pre-wrap break-words">
+                                          <div className="leading-relaxed whitespace-pre-wrap break-words text-foreground-muted/95">
                                             {cleanedContent}
                                           </div>
                                         </div>
@@ -1466,22 +1471,22 @@ export function ChatSidebar({
                           </AnimatePresence>
                           {isLoading && (
                             <motion.div
-                              initial={{ opacity: 0, x: -8 }}
-                              animate={{ opacity: 1, x: 0 }}
-                              className="p-2.5 bg-white/[0.03] border border-white/[0.04] text-slate-400 text-[11px] font-medium rounded-2xl flex items-center gap-2.5 w-fit"
+                              initial={{ opacity: 0, y: 8 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              className="px-3.5 py-2.5 bg-primary/12 border border-primary/25 text-primary/90 text-[11px] font-bold rounded-xl flex items-center gap-2.5 w-fit uppercase tracking-wide"
                             >
-                              <div className="flex gap-1">
-                                <div className="w-1.5 h-1.5 bg-indigo-400/70 rounded-full animate-bounce"></div>
+                              <div className="flex gap-1.5">
+                                <div className="w-2 h-2 bg-primary rounded-full animate-bounce"></div>
                                 <div
-                                  className="w-1.5 h-1.5 bg-indigo-400/70 rounded-full animate-bounce"
+                                  className="w-2 h-2 bg-primary rounded-full animate-bounce"
                                   style={{ animationDelay: "150ms" }}
                                 ></div>
                                 <div
-                                  className="w-1.5 h-1.5 bg-indigo-400/70 rounded-full animate-bounce"
+                                  className="w-2 h-2 bg-primary rounded-full animate-bounce"
                                   style={{ animationDelay: "300ms" }}
                                 ></div>
                               </div>
-                              Thinking...
+                              {agent?.name} is thinking...
                             </motion.div>
                           )}
                         </div>
@@ -1489,12 +1494,12 @@ export function ChatSidebar({
                         {/* Input Region */}
                         <form
                           onSubmit={handleSubmit}
-                          className="p-4 bg-gradient-to-t from-[#06080c] to-transparent border-t border-white/[0.04] relative z-10 shrink-0"
+                          className="p-3 sm:p-5 bg-gradient-to-t from-surface to-transparent border-t border-white/[0.08] relative z-10 shrink-0"
                         >
-                          <div className="bg-[#0a0c10] border border-white/[0.08] rounded-2xl p-2 shadow-lg flex flex-col gap-2 transition-all focus-within:border-indigo-500/40 focus-within:ring-1 focus-within:ring-indigo-500/20">
+                          <div className="glass-card border border-primary/20 rounded-xl sm:rounded-2xl p-2.5 sm:p-3 shadow-xl flex flex-col gap-2.5 sm:gap-3 transition-all focus-within:border-primary/40 focus-within:ring-1 focus-within:ring-primary/30">
                             <textarea
-                              className="w-full bg-transparent p-2 text-[13px] min-h-[40px] max-h-32 focus:outline-none text-white font-sans resize-none placeholder:text-slate-600 transition-all font-medium leading-relaxed"
-                              placeholder="Message or assign a task..."
+                              className="w-full bg-transparent p-3 text-[13px] min-h-[44px] max-h-32 focus:outline-none text-foreground font-sans resize-none placeholder:text-foreground-muted/50 transition-all font-medium leading-relaxed"
+                              placeholder="Chat with your agent... Type a message or assign a task"
                               value={input}
                               onChange={(e) => {
                                 setInput(e.target.value);
@@ -1509,36 +1514,40 @@ export function ChatSidebar({
                               }}
                             />
                             
-                            <div className="flex items-center justify-between px-1">
-                              <div className="flex items-center gap-1">
+                            <div className="flex items-center justify-between px-2">
+                              <div className="flex items-center gap-2">
                                 {["low", "medium", "high"].map((p) => (
-                                  <button
+                                  <motion.button
                                     key={p}
                                     type="button"
                                     onClick={() => setPriority(p as any)}
-                                    className={`px-2.5 py-1 text-[9px] font-bold rounded-lg transition-all uppercase tracking-wider ${
+                                    whileHover={{ y: -1 }}
+                                    whileTap={{ scale: 0.95 }}
+                                    className={`px-3 py-1.5 text-[8px] font-bold rounded-lg transition-all uppercase tracking-wider ${
                                       priority === p
-                                        ? p === "high" ? "bg-red-500/15 text-red-400"
-                                        : p === "medium" ? "bg-amber-500/15 text-amber-400"
-                                        : "bg-indigo-500/15 text-indigo-400"
-                                        : "text-slate-500 hover:text-slate-300 hover:bg-white/[0.03]"
+                                        ? p === "high" ? "bg-error/20 text-error border border-error/30 shadow-md"
+                                        : p === "medium" ? "bg-warning/20 text-warning border border-warning/30 shadow-md"
+                                        : "bg-primary/20 text-primary border border-primary/30 shadow-md"
+                                        : "text-foreground-muted/60 hover:text-foreground-muted/90 hover:bg-white/[0.05] border border-white/[0.08]"
                                     }`}
                                   >
                                     {p}
-                                  </button>
+                                  </motion.button>
                                 ))}
                               </div>
-                              <button
+                              <motion.button
                                 type="submit"
                                 disabled={!input.trim() || !agent}
-                                className={`w-8 h-8 rounded-xl flex items-center justify-center transition-all ${
+                                whileHover={{ scale: 1.08 }}
+                                whileTap={{ scale: 0.92 }}
+                                className={`w-9 h-9 rounded-lg flex items-center justify-center transition-all font-semibold shadow-md ${
                                   !input.trim() || !agent
-                                    ? "bg-white/[0.03] text-slate-600 cursor-not-allowed"
-                                    : "bg-indigo-500 text-white shadow-md hover:bg-indigo-400 active:scale-95"
+                                    ? "bg-white/[0.05] text-foreground-muted/40 cursor-not-allowed"
+                                    : "bg-gradient-to-br from-primary/80 to-primary text-foreground shadow-lg hover:shadow-xl hover:from-primary hover:to-primary-dark active:scale-95"
                                 }`}
                               >
-                                <Send size={14} className="relative right-[1px]" />
-                              </button>
+                                <Send size={15} strokeWidth={2.5} />
+                              </motion.button>
                             </div>
                           </div>
                         </form>

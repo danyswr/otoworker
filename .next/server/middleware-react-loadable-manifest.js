@@ -1,1 +1,1 @@
-self.__REACT_LOADABLE_MANIFEST='{"app/page.tsx -> @/components/ChatSidebar":{"id":2636,"files":["static/chunks/255.1828f659bffb0174.js"]},"app/page.tsx -> @/components/OfficeCanvas":{"id":759,"files":["static/chunks/759.b7ef0d2131145e4c.js"]}}';
+self.__REACT_LOADABLE_MANIFEST='{"app/page.tsx -> @/components/ChatSidebar":{"id":2636,"files":["static/chunks/255.6ace32061c21947e.js"]},"app/page.tsx -> @/components/OfficeCanvas":{"id":759,"files":["static/chunks/759.b7ef0d2131145e4c.js"]}}';
