@@ -1102,42 +1102,42 @@ export default function Page() {
   if (!isClient) return null;
 
   return (
-    <div className="h-screen flex flex-col bg-[#050505] text-[#e0e0e0] font-sans overflow-hidden">
+    <div className="h-screen flex flex-col bg-background text-foreground font-sans overflow-hidden">
       {/* Top Navigation Bar */}
-      <header className="h-12 border-b border-white/10 flex items-center justify-between px-6 bg-[#0a0c10]/80 backdrop-blur-md shrink-0 z-50 relative overflow-hidden">
-        <div className="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-blue-500/50 to-transparent opacity-50"></div>
-        <div className="flex items-center gap-4">
+      <header className="h-14 border-b border-white/[0.08] flex items-center justify-between px-8 bg-surface/50 backdrop-blur-xl shrink-0 z-50 relative overflow-hidden">
+        <div className="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-primary/30 to-transparent"></div>
+        <div className="flex items-center gap-5">
           <div className="flex items-center gap-3">
-            <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse shadow-[0_0_12px_rgba(59,130,246,0.8)]"></div>
-            <span className="font-display font-medium tracking-[0.3em] text-xs text-white/90 uppercase">
-              AUWORKER{" "}
-              <span className="text-white/20 font-mono text-[9px] font-normal tracking-wide ml-2 bg-white/5 px-1.5 py-0.5 rounded border border-white/5">
+            <div className="w-2.5 h-2.5 bg-primary rounded-full animate-pulse shadow-[0_0_16px_rgba(99,102,241,0.7)]"></div>
+            <span className="font-display font-bold tracking-[0.2em] text-[11px] text-foreground uppercase">
+              OtoWorker{" "}
+              <span className="text-foreground-muted/60 font-mono text-[8px] font-normal tracking-wider ml-3 bg-primary/10 px-2 py-1 rounded-md border border-primary/20">
                 v0.9.0-BETA
               </span>
             </span>
           </div>
-          <div className="h-4 w-px bg-white/10 hidden sm:block"></div>
-          <div className="hidden sm:flex items-center gap-2">
-            <Activity size={10} className="text-white/20" />
-            <span className="text-[9px] font-mono text-white/30 uppercase tracking-[0.2em]">
-              System_Integrity: 100%
+          <div className="h-5 w-px bg-white/[0.08] hidden sm:block"></div>
+          <div className="hidden sm:flex items-center gap-2.5">
+            <Activity size={11} className="text-primary/60" />
+            <span className="text-[8px] font-mono text-foreground-muted/60 uppercase tracking-widest font-medium">
+              Integrity: 100%
             </span>
           </div>
         </div>
-        <div className="flex items-center gap-6">
-          <div className="hidden md:flex items-center gap-2 px-3 py-1 bg-white/[0.03] border border-white/5 rounded-full">
-            <div className="w-1.5 h-1.5 bg-green-500 rounded-full"></div>
-            <span className="text-[9px] font-mono text-white/40 uppercase tracking-widest">
-              Network_Stable
+        <div className="flex items-center gap-5">
+          <div className="hidden md:flex items-center gap-2.5 px-3.5 py-1.5 bg-success/10 border border-success/20 rounded-full">
+            <div className="w-1.5 h-1.5 bg-success rounded-full shadow-[0_0_8px_rgba(16,185,129,0.6)]"></div>
+            <span className="text-[8px] font-mono text-success/80 uppercase tracking-widest font-semibold">
+              Connected
             </span>
           </div>
-          <div className="flex items-center gap-3">
-            <button className="p-2 text-white/30 hover:text-white transition-colors">
-              <Radio size={14} />
+          <div className="flex items-center gap-2">
+            <button className="p-2 text-foreground-muted/60 hover:text-primary hover:bg-primary/10 transition-all rounded-lg">
+              <Radio size={15} strokeWidth={1.5} />
             </button>
-            <button onClick={() => { setShowSettings(true); if (apiKey) fetchModels(apiKey, apiProvider); }} className="p-2 text-white/30 hover:text-white transition-colors relative">
-              <Settings2 size={14} />
-              {apiKey && <span className="absolute top-1 right-1 w-1.5 h-1.5 bg-emerald-500 rounded-full"></span>}
+            <button onClick={() => { setShowSettings(true); if (apiKey) fetchModels(apiKey, apiProvider); }} className="p-2 text-foreground-muted/60 hover:text-primary hover:bg-primary/10 transition-all rounded-lg relative group">
+              <Settings2 size={15} strokeWidth={1.5} />
+              {apiKey && <span className="absolute top-1 right-1 w-2 h-2 bg-success rounded-full shadow-[0_0_8px_rgba(16,185,129,0.6)]"></span>}
             </button>
           </div>
         </div>
@@ -1150,72 +1150,74 @@ export default function Page() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[200] bg-black/60 backdrop-blur-sm flex items-center justify-center"
+            className="fixed inset-0 z-[200] bg-black/50 backdrop-blur-lg flex items-center justify-center p-4"
             onClick={() => setShowSettings(false)}
           >
             <motion.div
-              initial={{ scale: 0.9, opacity: 0, y: 20 }}
+              initial={{ scale: 0.92, opacity: 0, y: 24 }}
               animate={{ scale: 1, opacity: 1, y: 0 }}
-              exit={{ scale: 0.9, opacity: 0, y: 20 }}
-              transition={{ type: "spring", stiffness: 400, damping: 30 }}
-              className="w-full max-w-md bg-[#0f1115] border border-white/10 rounded-2xl shadow-2xl overflow-hidden"
+              exit={{ scale: 0.92, opacity: 0, y: 24 }}
+              transition={{ type: "spring", stiffness: 380, damping: 28 }}
+              className="w-full max-w-md glass-panel rounded-3xl shadow-2xl overflow-hidden gradient-border"
               onClick={(e) => e.stopPropagation()}
             >
               {/* Header */}
-              <div className="flex items-center justify-between px-6 py-4 border-b border-white/5 bg-white/[0.02]">
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-lg bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center">
-                    <Settings2 size={16} className="text-indigo-400" />
+              <div className="flex items-center justify-between px-6 py-5 border-b border-white/[0.08] bg-white/[0.01]">
+                <div className="flex items-center gap-4">
+                  <div className="w-10 h-10 rounded-xl bg-primary/15 border border-primary/30 flex items-center justify-center glow-blue">
+                    <Settings2 size={18} className="text-primary" strokeWidth={1.5} />
                   </div>
                   <div>
-                    <h3 className="text-sm font-semibold text-white">API Configuration</h3>
-                    <p className="text-[10px] text-slate-500 uppercase tracking-widest">Provider & Model Settings</p>
+                    <h3 className="text-sm font-bold text-foreground font-display">API Configuration</h3>
+                    <p className="text-[9px] text-foreground-muted/60 uppercase tracking-widest font-mono">Settings & Provider</p>
                   </div>
                 </div>
-                <button onClick={() => setShowSettings(false)} className="p-1.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-all">
-                  <X size={16} />
+                <button onClick={() => setShowSettings(false)} className="p-2 text-foreground-muted/60 hover:text-foreground hover:bg-primary/10 rounded-lg transition-all duration-200">
+                  <X size={18} strokeWidth={1.5} />
                 </button>
               </div>
 
               {/* Body */}
-              <div className="px-6 py-5 space-y-5">
+              <div className="px-6 py-6 space-y-6 max-h-[60vh] overflow-y-auto">
                 {/* Provider Selection */}
-                <div className="space-y-2">
-                  <label className="text-[10px] font-mono text-slate-400 uppercase tracking-widest">Provider</label>
-                  <div className="flex gap-2">
+                <div className="space-y-3">
+                  <label className="text-[9px] font-mono text-foreground-muted/60 uppercase tracking-widest font-semibold">Provider</label>
+                  <div className="flex gap-2.5">
                     {(["gemini", "openrouter"] as const).map((p) => (
-                      <button
+                      <motion.button
                         key={p}
                         onClick={() => { setApiProvider(p); setAvailableModels([]); }}
-                        className={`flex-1 py-2.5 rounded-xl text-xs font-semibold transition-all border ${
+                        whileHover={{ y: -1 }}
+                        whileTap={{ scale: 0.98 }}
+                        className={`flex-1 py-3 rounded-xl text-xs font-bold transition-all duration-300 border ${
                           apiProvider === p
-                            ? "bg-indigo-500/20 border-indigo-500/40 text-indigo-300 shadow-[0_0_15px_rgba(99,102,241,0.15)]"
-                            : "bg-white/[0.03] border-white/5 text-slate-400 hover:border-white/15 hover:text-white"
+                            ? "tab-pill-active bg-gradient-to-r from-primary/20 to-primary/10 text-primary shadow-[0_0_20px_rgba(99,102,241,0.15)]"
+                            : "bg-white/[0.04] border-white/[0.08] text-foreground-muted/70 hover:border-primary/30 hover:text-foreground-muted hover:bg-white/[0.06]"
                         }`}
                       >
                         {p === "gemini" ? "🔷 Gemini" : "🌐 OpenRouter"}
-                      </button>
+                      </motion.button>
                     ))}
                   </div>
                 </div>
 
                 {/* API Key */}
-                <div className="space-y-2">
-                  <label className="text-[10px] font-mono text-slate-400 uppercase tracking-widest">API Key</label>
+                <div className="space-y-3">
+                  <label className="text-[9px] font-mono text-foreground-muted/60 uppercase tracking-widest font-semibold">API Key</label>
                   <div className="relative">
                     <input
                       type="password"
                       value={apiKey}
                       onChange={(e) => setApiKey(e.target.value)}
                       placeholder={apiProvider === "gemini" ? "AIzaSy..." : "sk-or-v1-..."}
-                      className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-xs text-white font-mono focus:border-indigo-500/50 focus:ring-1 focus:ring-indigo-500/30 outline-none transition-all placeholder:text-slate-600 shadow-inner"
+                      className="w-full glass-input rounded-xl px-4 py-3 text-xs text-foreground font-mono placeholder:text-foreground-muted/40 shadow-inner"
                     />
                     {apiKey && (
                       <button
                         onClick={() => fetchModels(apiKey, apiProvider)}
-                        className="absolute right-2 top-1/2 -translate-y-1/2 text-[9px] font-mono text-indigo-400 hover:text-white bg-indigo-500/10 hover:bg-indigo-500/20 px-2 py-1 rounded-lg border border-indigo-500/20 transition-all"
+                        className="absolute right-2 top-1/2 -translate-y-1/2 text-[8px] font-mono text-primary hover:text-foreground bg-primary/15 hover:bg-primary/25 px-2.5 py-1.5 rounded-lg border border-primary/30 transition-all duration-200"
                       >
-                        {isLoadingModels ? "Loading..." : "Fetch Models"}
+                        {isLoadingModels ? "Loading..." : "Fetch"}
                       </button>
                     )}
                   </div>
@@ -1223,18 +1225,18 @@ export default function Page() {
 
                 {/* Model Selection */}
                 <div className="space-y-2">
-                  <label className="text-[10px] font-mono text-slate-400 uppercase tracking-widest">
-                    Model {apiProvider === "openrouter" && <span className="text-slate-600">(manual input)</span>}
+                  <label className="text-[10px] font-mono text-foreground-muted uppercase tracking-widest">
+                    Model {apiProvider === "openrouter" && <span className="text-foreground-muted/50">(manual input)</span>}
                   </label>
                   {apiProvider === "gemini" ? (
                     availableModels.length > 0 ? (
                       <select
                         value={selectedModel}
                         onChange={(e) => setSelectedModel(e.target.value)}
-                        className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-xs text-white font-mono focus:border-indigo-500/50 focus:ring-1 focus:ring-indigo-500/30 outline-none transition-all shadow-inner appearance-none cursor-pointer"
+                        className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-xs text-foreground font-mono focus:border-indigo-500/50 focus:ring-1 focus:ring-indigo-500/30 outline-none transition-all shadow-inner appearance-none cursor-pointer"
                       >
                         {availableModels.map((m) => (
-                          <option key={m} value={m} className="bg-[#0f1115] text-white">
+                          <option key={m} value={m} className="bg-surface-elevated text-foreground">
                             {m}
                           </option>
                         ))}
@@ -1245,7 +1247,7 @@ export default function Page() {
                         value={selectedModel}
                         onChange={(e) => setSelectedModel(e.target.value)}
                         placeholder="gemini-2.0-flash"
-                        className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-xs text-white font-mono focus:border-indigo-500/50 focus:ring-1 focus:ring-indigo-500/30 outline-none transition-all placeholder:text-slate-600 shadow-inner"
+                        className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-xs text-foreground font-mono focus:border-indigo-500/50 focus:ring-1 focus:ring-indigo-500/30 outline-none transition-all placeholder:text-foreground-muted/50 shadow-inner"
                       />
                     )
                   ) : (
@@ -1254,13 +1256,13 @@ export default function Page() {
                       value={selectedModel}
                       onChange={(e) => setSelectedModel(e.target.value)}
                       placeholder="meta-llama/llama-4-maverick"
-                      className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-xs text-white font-mono focus:border-indigo-500/50 focus:ring-1 focus:ring-indigo-500/30 outline-none transition-all placeholder:text-slate-600 shadow-inner"
+                      className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-xs text-foreground font-mono focus:border-indigo-500/50 focus:ring-1 focus:ring-indigo-500/30 outline-none transition-all placeholder:text-foreground-muted/50 shadow-inner"
                     />
                   )}
                   {apiProvider === "openrouter" && (
-                    <p className="text-[9px] text-slate-600 font-mono">
+                    <p className="text-[9px] text-foreground-muted/50 font-mono">
                       Browse models at{" "}
-                      <a href="https://openrouter.ai/models" target="_blank" rel="noreferrer" className="text-indigo-400 hover:text-indigo-300 underline">
+                      <a href="https://openrouter.ai/models" target="_blank" rel="noreferrer" className="text-primary hover:text-primary/80 underline">
                         openrouter.ai/models
                       </a>
                     </p>
@@ -1269,10 +1271,10 @@ export default function Page() {
 
                 {/* Current Config Summary */}
                 <div className="bg-white/[0.02] border border-white/5 rounded-xl p-4 space-y-1.5">
-                  <p className="text-[9px] font-mono text-slate-500 uppercase tracking-widest">Active Configuration</p>
+                  <p className="text-[9px] font-mono text-foreground-muted/70 uppercase tracking-widest">Active Configuration</p>
                   <div className="flex items-center gap-2">
-                    <span className={`w-1.5 h-1.5 rounded-full ${apiKey ? "bg-emerald-500 shadow-[0_0_6px_rgba(16,185,129,0.6)]" : "bg-red-500"}`}></span>
-                    <span className="text-[11px] text-white/80 font-mono">
+                    <span className={`w-1.5 h-1.5 rounded-full ${apiKey ? "bg-emerald-500 shadow-[0_0_6px_rgba(16,185,129,0.6)]" : "bg-error/95"}`}></span>
+                    <span className="text-[11px] text-foreground/80 font-mono">
                       {apiProvider.toUpperCase()} → {selectedModel || "not set"}
                     </span>
                   </div>
@@ -1283,13 +1285,13 @@ export default function Page() {
               <div className="px-6 py-4 border-t border-white/5 flex gap-3">
                 <button
                   onClick={() => setShowSettings(false)}
-                  className="flex-1 py-3 bg-white/5 hover:bg-white/10 text-white/60 rounded-xl text-xs font-medium transition-all border border-white/5"
+                  className="flex-1 py-3 bg-white/5 hover:bg-white/10 text-foreground/60 rounded-xl text-xs font-medium transition-all border border-white/5"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={() => { saveSettings(); setShowSettings(false); }}
-                  className="flex-1 py-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-semibold transition-all shadow-[0_4px_20px_rgba(99,102,241,0.3)] active:scale-[0.98]"
+                  className="flex-1 py-3 bg-primary hover:bg-primary text-foreground rounded-xl text-xs font-semibold transition-all shadow-[0_4px_20px_rgba(99,102,241,0.3)] active:scale-[0.98]"
                 >
                   {settingsSaved ? "✓ Saved!" : "Save & Apply"}
                 </button>
@@ -1304,52 +1306,55 @@ export default function Page() {
         <main className="relative min-w-0 h-full overflow-hidden">
           {/* Unified Office Dashboard HUD */}
           <div
-            className={`absolute top-6 left-6 w-full max-w-[420px] z-40 pointer-events-auto flex flex-col transition-all duration-700 ease-[cubic-bezier(0.19,1,0.22,1)] ${hudIsCollapsed ? "-translate-x-[calc(100%-48px)]" : ""}`}
+            className={`absolute top-8 left-8 w-full max-w-[440px] z-40 pointer-events-auto flex flex-col transition-all duration-700 ease-[cubic-bezier(0.19,1,0.22,1)] ${hudIsCollapsed ? "-translate-x-[calc(100%-56px)]" : ""}`}
           >
             <motion.div
               initial={false}
-              className="bg-[#0f1115]/80 backdrop-blur-3xl border border-white/10 rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] relative overflow-hidden flex flex-col group/hud"
+              className="glass-panel rounded-2xl relative overflow-hidden flex flex-col group/hud shadow-2xl gradient-border"
             >
-              {/* Soft Glow */}
-              <div className="absolute top-[-100px] right-[-100px] w-[300px] h-[300px] bg-indigo-500/10 rounded-full blur-[100px] pointer-events-none"></div>
+              {/* Soft Glow Accent */}
+              <div className="absolute top-[-120px] right-[-120px] w-[360px] h-[360px] bg-primary/8 rounded-full blur-3xl pointer-events-none"></div>
 
               {/* Console Header */}
-              <div className="px-5 py-4 flex items-center justify-between relative z-10">
-                <div className="flex items-center gap-3.5">
-                  <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-indigo-500/20 via-violet-500/10 to-transparent border border-indigo-500/15 flex items-center justify-center shadow-[0_0_20px_rgba(99,102,241,0.1)] gradient-border">
-                    <Terminal size={17} className="text-indigo-400" />
+              <div className="px-6 py-5 flex items-center justify-between relative z-10 border-b border-white/[0.08]">
+                <div className="flex items-center gap-4">
+                  <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-primary/20 to-secondary/15 border border-primary/25 flex items-center justify-center glow-blue">
+                    <Terminal size={18} className="text-primary" strokeWidth={1.5} />
                   </div>
                   <div className="flex flex-col">
-                    <h3 className="font-sans text-[14px] font-semibold text-white tracking-tight leading-none">
+                    <h3 className="font-display text-[15px] font-bold text-foreground tracking-tight leading-none">
                       Workspace
                     </h3>
-                    <div className="flex items-center gap-2 mt-1.5">
-                      <span className="font-sans text-[10px] text-emerald-400 flex items-center gap-1.5 font-medium">
-                        <span className="w-[5px] h-[5px] bg-emerald-400 rounded-full status-pulse"></span>
-                        Online
+                    <div className="flex items-center gap-2.5 mt-1.5">
+                      <span className="font-sans text-[9px] text-success flex items-center gap-1.5 font-bold uppercase tracking-wide">
+                        <span className="w-[6px] h-[6px] bg-success rounded-full status-pulse"></span>
+                        Active
                       </span>
-                      <span className="text-white/10">·</span>
-                      <span className="font-sans text-[10px] text-slate-400/80 font-medium">
-                        {characterList.length} Active Staff
+                      <span className="text-foreground-muted/20">·</span>
+                      <span className="font-mono text-[9px] text-foreground-muted/70 font-semibold uppercase tracking-wide">
+                        {characterList.length} Staff
                       </span>
                     </div>
                   </div>
                 </div>
-                <button
+                <motion.button
                   onClick={() => setHudIsCollapsed(!hudIsCollapsed)}
-                  className="w-7 h-7 flex items-center justify-center text-slate-500 hover:text-white hover:bg-white/5 transition-all rounded-lg"
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  className="w-8 h-8 flex items-center justify-center text-foreground-muted/60 hover:text-primary hover:bg-primary/10 transition-all rounded-lg"
                 >
                   <ChevronRight
-                    size={16}
+                    size={17}
+                    strokeWidth={1.8}
                     className={`transition-transform duration-500 ease-[cubic-bezier(0.19,1,0.22,1)] ${hudIsCollapsed ? "" : "rotate-180"}`}
                   />
-                </button>
+                </motion.button>
               </div>
 
               {!hudIsCollapsed && (
                 <>
-                  {/* Module Selector - Pill Tabs */}
-                  <div className="flex mx-4 mb-1 p-1 bg-white/[0.02] rounded-xl border border-white/[0.04] gap-1">
+                  {/* Module Selector - Premium Tabs */}
+                  <div className="flex mx-5 my-4 p-1.5 bg-white/[0.04] rounded-xl border border-white/[0.08] gap-1.5">
                     {[
                       {
                         id: "dashboard",
@@ -1372,11 +1377,11 @@ export default function Page() {
                         onClick={() => setHudTab(tab.id as any)}
                         className={`flex-1 py-2 flex items-center justify-center gap-1.5 font-sans text-[11px] font-medium transition-all relative rounded-lg tab-pill ${
                           hudTab === tab.id
-                            ? "text-white tab-pill-active"
-                            : "text-slate-500 hover:text-slate-300 hover:bg-white/[0.03]"
+                            ? "text-foreground tab-pill-active"
+                            : "text-foreground-muted/70 hover:text-slate-300 hover:bg-white/[0.03]"
                         }`}
                       >
-                        <span className={`relative z-10 ${hudTab === tab.id ? "text-indigo-400" : ""}`}>{tab.icon}</span>
+                        <span className={`relative z-10 ${hudTab === tab.id ? "text-primary" : ""}`}>{tab.icon}</span>
                         <span className="relative z-10">{tab.label}</span>
                       </button>
                     ))}
@@ -1396,11 +1401,11 @@ export default function Page() {
                           {/* Main Stats */}
                           <div className="grid grid-cols-2 gap-3">
                             <div className="glass-card p-4 rounded-2xl group cursor-default">
-                              <span className="font-sans text-[10px] text-slate-500 font-medium tracking-wider uppercase block mb-3">
+                              <span className="font-sans text-[10px] text-foreground-muted/70 font-medium tracking-wider uppercase block mb-3">
                                 Active Tasks
                               </span>
                               <div className="flex items-baseline gap-2">
-                                <span className="text-2xl font-sans font-bold text-white tracking-tight">
+                                <span className="text-2xl font-sans font-bold text-foreground tracking-tight">
                                   {
                                     characterList.filter(
                                       (c) =>
@@ -1410,21 +1415,21 @@ export default function Page() {
                                     ).length
                                   }
                                 </span>
-                                <span className="text-[10px] text-indigo-400/80 font-medium bg-indigo-500/10 px-1.5 py-0.5 rounded-md">
+                                <span className="text-[10px] text-primary/80 font-medium bg-primary/10 px-1.5 py-0.5 rounded-md">
                                   In Progress
                                 </span>
                               </div>
                             </div>
                             <div className="glass-card p-4 rounded-2xl group cursor-default">
-                              <span className="font-sans text-[10px] text-slate-500 font-medium tracking-wider uppercase block mb-3">
+                              <span className="font-sans text-[10px] text-foreground-muted/70 font-medium tracking-wider uppercase block mb-3">
                                 Total Staff
                               </span>
                               <div className="flex items-baseline gap-2">
-                                <span className="text-2xl font-sans font-bold text-white tracking-tight">
+                                <span className="text-2xl font-sans font-bold text-foreground tracking-tight">
                                   {characterList.length < 10 ? "0" : ""}
                                   {characterList.length}
                                 </span>
-                                <span className="text-[10px] text-emerald-400/80 font-medium bg-emerald-500/10 px-1.5 py-0.5 rounded-md">
+                                <span className="text-[10px] text-success/80 font-medium bg-emerald-500/10 px-1.5 py-0.5 rounded-md">
                                   Online
                                 </span>
                               </div>
@@ -1434,7 +1439,7 @@ export default function Page() {
                           {/* Staff List */}
                           <div className="flex flex-col gap-3">
                             <div className="flex items-center justify-between px-1">
-                              <span className="font-sans text-[10px] text-slate-500 font-medium tracking-wider uppercase">
+                              <span className="font-sans text-[10px] text-foreground-muted/70 font-medium tracking-wider uppercase">
                                 Staff Overview
                               </span>
                             </div>
@@ -1453,7 +1458,7 @@ export default function Page() {
                                 >
                                   <div className="flex items-center gap-3">
                                     <div className="relative">
-                                      <div className="w-9 h-9 rounded-xl overflow-hidden border border-white/[0.06] bg-[#0a0c10] flex items-center justify-center">
+                                      <div className="w-9 h-9 rounded-xl overflow-hidden border border-white/[0.06] bg-surface flex items-center justify-center">
                                         <div
                                           className="w-7 h-9 scale-[1.6] relative -top-0.5"
                                           style={{
@@ -1467,10 +1472,10 @@ export default function Page() {
                                       <div className={`absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border-2 border-[#0f1115] ${c.isProcessingTask ? "bg-indigo-400 status-pulse" : "bg-slate-600"}`}></div>
                                     </div>
                                     <div className="flex flex-col">
-                                      <span className="text-[12px] font-semibold text-white/90 tracking-tight leading-none mb-0.5">
+                                      <span className="text-[12px] font-semibold text-foreground/90 tracking-tight leading-none mb-0.5">
                                         {c.name}
                                       </span>
-                                      <span className="text-[10px] text-slate-500 font-medium">
+                                      <span className="text-[10px] text-foreground-muted/70 font-medium">
                                         {c.profession}
                                       </span>
                                     </div>
@@ -1478,7 +1483,7 @@ export default function Page() {
 
                                   <div className="flex items-center gap-2">
                                     <span
-                                      className={`text-[9px] font-medium tracking-wide px-2 py-0.5 rounded-md ${c.isProcessingTask ? "text-indigo-400 bg-indigo-500/10" : "text-slate-600 bg-white/[0.03]"}`}
+                                      className={`text-[9px] font-medium tracking-wide px-2 py-0.5 rounded-md ${c.isProcessingTask ? "text-primary bg-primary/10" : "text-foreground-muted/50 bg-white/[0.03]"}`}
                                     >
                                       {c.isProcessingTask ? "Working" : "Idle"}
                                     </span>
@@ -1506,7 +1511,7 @@ export default function Page() {
                           {/* Log Ticker */}
                           <div className="mt-auto pt-6 border-t border-slate-800/60 flex flex-col gap-3">
                             <div className="flex items-center justify-between">
-                              <div className="flex items-center gap-2 text-slate-400">
+                              <div className="flex items-center gap-2 text-foreground-muted">
                                 <Terminal size={12} />
                                 <span className="font-sans text-[11px] font-medium tracking-wide">
                                   Office Log
@@ -1514,7 +1519,7 @@ export default function Page() {
                               </div>
                               <button
                                 onClick={() => setShowCabinetMenu(true)}
-                                className="text-[10px] font-medium text-slate-500 hover:text-slate-300 transition-colors flex items-center gap-1"
+                                className="text-[10px] font-medium text-foreground-muted/70 hover:text-slate-300 transition-colors flex items-center gap-1"
                               >
                                 Archives <ChevronRight size={10} />
                               </button>
@@ -1522,13 +1527,13 @@ export default function Page() {
                             <div className="bg-slate-800/30 border border-slate-800/60 p-4 rounded-xl relative overflow-hidden">
                               <div className="h-24 overflow-hidden relative font-sans text-[11px] leading-relaxed">
                                 <div className="absolute inset-x-0 bottom-0 h-10 bg-gradient-to-t from-[#13161f] to-transparent pointer-events-none z-10"></div>
-                                <div className="space-y-2 text-slate-400">
+                                <div className="space-y-2 text-foreground-muted">
                                   {cabinetLogs.slice(-6).map((l, i) => (
                                     <div
                                       key={i}
                                       className="truncate hover:text-slate-200 transition-colors flex gap-3"
                                     >
-                                      <span className="text-slate-500 shrink-0 tabular-nums">
+                                      <span className="text-foreground-muted/70 shrink-0 tabular-nums">
                                         [
                                         {new Date(
                                           l.timestamp,
@@ -1544,7 +1549,7 @@ export default function Page() {
                                       </span>
                                     </div>
                                   ))}
-                                  <div className="text-slate-500 italic">
+                                  <div className="text-foreground-muted/70 italic">
                                     Waiting for events...
                                   </div>
                                 </div>
@@ -1563,19 +1568,19 @@ export default function Page() {
                           transition={{ duration: 0.4, ease: "circOut" }}
                           className="flex flex-col gap-6"
                         >
-                          <div className="flex justify-between items-center bg-[#090b0f] border border-white/5 p-6 rounded-xl relative overflow-hidden group/recruit shadow-sm">
-                            <div className="absolute inset-0 bg-indigo-600/[0.02] opacity-0 group-hover/recruit:opacity-100 transition-opacity pointer-events-none"></div>
+                          <div className="flex justify-between items-center bg-surface border border-white/5 p-6 rounded-xl relative overflow-hidden group/recruit shadow-sm">
+                            <div className="absolute inset-0 bg-primary/[0.02] opacity-0 group-hover/recruit:opacity-100 transition-opacity pointer-events-none"></div>
                             <div className="flex flex-col gap-1 relative z-10">
-                              <span className="font-sans text-[12px] text-indigo-400 font-semibold tracking-wide">
+                              <span className="font-sans text-[12px] text-primary font-semibold tracking-wide">
                                 Team Expansion
                               </span>
-                              <span className="text-[10px] font-sans text-slate-500 font-medium">
+                              <span className="text-[10px] font-sans text-foreground-muted/70 font-medium">
                                 Recruiting: Open Headcount
                               </span>
                             </div>
                             <button
                               onClick={() => setShowHireMenu(true)}
-                              className="px-6 py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-sans text-[12px] font-medium transition-all relative overflow-hidden group/btn shadow-[0_4px_10px_rgba(79,70,229,0.3)] active:scale-95 rounded-lg border border-indigo-500/50"
+                              className="px-6 py-3 bg-primary hover:bg-primary text-foreground font-sans text-[12px] font-medium transition-all relative overflow-hidden group/btn shadow-[0_4px_10px_rgba(79,70,229,0.3)] active:scale-95 rounded-lg border border-indigo-500/50"
                             >
                               <div className="absolute inset-0 bg-white/20 -translate-x-full group-hover/btn:translate-x-full transition-transform duration-700 slant-glow"></div>
                               + Onboard Staff
@@ -1595,8 +1600,8 @@ export default function Page() {
                                 }}
                                 className={`flex items-center gap-5 p-5 border cursor-pointer transition-all rounded-xl relative group/card shadow-sm ${
                                   selectedAgentId === c.id
-                                    ? "bg-indigo-600/[0.05] border-indigo-500/30"
-                                    : "bg-[#090b0f] border-white/5 hover:border-white/10 hover:bg-white/[0.02]"
+                                    ? "bg-primary/[0.05] border-indigo-500/30"
+                                    : "bg-surface border-white/5 hover:border-white/10 hover:bg-white/[0.02]"
                                 }`}
                               >
                                 {selectedAgentId === c.id && (
@@ -1626,12 +1631,12 @@ export default function Page() {
 
                                 <div className="flex-1 flex flex-col gap-1.5 relative z-10">
                                   <div className="flex items-center justify-between">
-                                    <span className="text-sm font-display font-medium text-white/90 tracking-tight group-hover/card:text-white transition-colors">
+                                    <span className="text-sm font-display font-medium text-foreground/90 tracking-tight group-hover/card:text-foreground transition-colors">
                                       {c.name}
                                     </span>
                                     <div className="flex items-center gap-2">
                                       <span
-                                        className={`text-[8px] font-mono font-black uppercase tracking-widest px-2 py-0.5 rounded border transition-colors ${selectedAgentId === c.id ? "bg-blue-500/20 text-blue-400 border-blue-500/30" : "bg-white/5 text-white/20 border-white/5"}`}
+                                        className={`text-[8px] font-mono font-black uppercase tracking-widest px-2 py-0.5 rounded border transition-colors ${selectedAgentId === c.id ? "bg-blue-500/20 text-primary400 border-blue-500/30" : "bg-white/5 text-foreground/20 border-white/5"}`}
                                       >
                                         {c.state}
                                       </span>
@@ -1645,7 +1650,7 @@ export default function Page() {
                                     </div>
                                   </div>
                                   <div className="flex items-center gap-3">
-                                    <span className="text-[8px] font-mono text-blue-400/40 uppercase font-black tracking-[0.2em]">
+                                    <span className="text-[8px] font-mono text-primary400/40 uppercase font-black tracking-[0.2em]">
                                       {c.profession}
                                     </span>
                                     <div className="flex-1 h-1 bg-white/5 rounded-full overflow-hidden shadow-inner">
@@ -1682,9 +1687,9 @@ export default function Page() {
                                         <div className="flex items-center gap-2 border-b border-white/5 pb-2">
                                           <Cpu
                                             size={10}
-                                            className="text-blue-400"
+                                            className="text-primary400"
                                           />
-                                          <span className="text-[8px] font-mono font-black uppercase tracking-[0.3em] text-white/40">
+                                          <span className="text-[8px] font-mono font-black uppercase tracking-[0.3em] text-foreground/40">
                                             Neural_Model_Link
                                           </span>
                                         </div>
@@ -1692,11 +1697,11 @@ export default function Page() {
                                         <div className="grid grid-cols-1 gap-4">
                                           <div className="flex flex-col gap-2">
                                             <div className="flex items-center justify-between">
-                                              <label className="text-[7px] font-mono text-white/20 uppercase tracking-widest flex items-center gap-1.5">
+                                              <label className="text-[7px] font-mono text-foreground/20 uppercase tracking-widest flex items-center gap-1.5">
                                                 <Thermometer size={8} />{" "}
                                                 Temperature
                                               </label>
-                                              <span className="text-[10px] font-mono text-blue-400/80 font-bold">
+                                              <span className="text-[10px] font-mono text-primary400/80 font-bold">
                                                 {c.aiConfig.temperature.toFixed(
                                                   1,
                                                 )}
@@ -1723,10 +1728,10 @@ export default function Page() {
                                           <div className="grid grid-cols-2 gap-3">
                                             <div className="flex flex-col gap-2">
                                               <div className="flex items-center justify-between">
-                                                <label className="text-[7px] font-mono text-white/20 uppercase tracking-widest">
+                                                <label className="text-[7px] font-mono text-foreground/20 uppercase tracking-widest">
                                                   Top_P
                                                 </label>
-                                                <span className="text-[9px] font-mono text-white/40">
+                                                <span className="text-[9px] font-mono text-foreground/40">
                                                   {c.aiConfig.topP.toFixed(2)}
                                                 </span>
                                               </div>
@@ -1750,10 +1755,10 @@ export default function Page() {
                                             </div>
                                             <div className="flex flex-col gap-2">
                                               <div className="flex items-center justify-between">
-                                                <label className="text-[7px] font-mono text-white/20 uppercase tracking-widest">
+                                                <label className="text-[7px] font-mono text-foreground/20 uppercase tracking-widest">
                                                   Top_K
                                                 </label>
-                                                <span className="text-[9px] font-mono text-white/40">
+                                                <span className="text-[9px] font-mono text-foreground/40">
                                                   {c.aiConfig.topK}
                                                 </span>
                                               </div>
@@ -1778,7 +1783,7 @@ export default function Page() {
                                           </div>
 
                                           <div className="flex flex-col gap-2">
-                                            <label className="text-[7px] font-mono text-white/20 uppercase tracking-widest flex items-center gap-1.5">
+                                            <label className="text-[7px] font-mono text-foreground/20 uppercase tracking-widest flex items-center gap-1.5">
                                               <Box size={8} /> Deploy_Engine
                                             </label>
                                             <div className="grid grid-cols-2 gap-2">
@@ -1798,8 +1803,8 @@ export default function Page() {
                                                   }}
                                                   className={`px-3 py-1.5 rounded-md border font-mono text-[8px] transition-all ${
                                                     c.aiConfig.model === m
-                                                      ? "bg-blue-500/20 border-blue-500/40 text-blue-400"
-                                                      : "bg-white/5 border-white/5 text-white/20 hover:text-white/40"
+                                                      ? "bg-blue-500/20 border-blue-500/40 text-primary400"
+                                                      : "bg-white/5 border-white/5 text-foreground/20 hover:text-foreground/40"
                                                   }`}
                                                 >
                                                   {m
@@ -1842,7 +1847,7 @@ export default function Page() {
                             {/* Header block with solid dividers */}
                             <div className="flex items-center justify-between pb-4 mb-4 border-b border-[#2A2B32] relative z-10">
                               <div className="flex flex-col gap-1.5">
-                                <label className="font-mono text-[11px] text-white uppercase tracking-[0.2em] font-medium flex items-center gap-2">
+                                <label className="font-mono text-[11px] text-foreground uppercase tracking-[0.2em] font-medium flex items-center gap-2">
                                   <span className="w-1.5 h-1.5 bg-[#FF4444] rounded-full shadow-[0_0_8px_rgba(255,68,68,0.6)]"></span>
                                   Transmission Priority
                                 </label>
@@ -1858,7 +1863,7 @@ export default function Page() {
                                       onClick={() => setBroadcastPriority(p)}
                                       className={`px-5 py-1.5 text-[10px] font-mono uppercase tracking-widest transition-all rounded-[4px] ${
                                         broadcastPriority === p
-                                          ? "bg-[#2A2B32] text-white shadow-sm"
+                                          ? "bg-[#2A2B32] text-foreground shadow-sm"
                                           : "text-[#8E9299] hover:text-[#E6E6E6]"
                                       }`}
                                     >
@@ -1882,7 +1887,7 @@ export default function Page() {
                               <div className="relative group/input">
                                 <textarea
                                   placeholder="Construct Global Protocol... (System awaits instruction)"
-                                  className="w-full bg-[#0D0E12] border border-[#2A2B32] rounded-lg p-5 text-[13px] h-36 focus:outline-none focus:border-[#4A4B52] text-white font-mono leading-relaxed transition-all placeholder:text-[#8E9299]/50 shadow-inner resize-none"
+                                  className="w-full bg-[#0D0E12] border border-[#2A2B32] rounded-lg p-5 text-[13px] h-36 focus:outline-none focus:border-[#4A4B52] text-foreground font-mono leading-relaxed transition-all placeholder:text-[#8E9299]/50 shadow-inner resize-none"
                                   onKeyDown={(e) => {
                                     if (
                                       e.key === "Enter" &&
@@ -1929,7 +1934,7 @@ export default function Page() {
                                   <Radio size={16} />
                                 </div>
                                 <div className="flex flex-col gap-1">
-                                  <span className="text-[11px] font-medium text-white uppercase tracking-widest font-mono">
+                                  <span className="text-[11px] font-medium text-foreground uppercase tracking-widest font-mono">
                                     Neural Broadcaster
                                   </span>
                                   <div className="flex items-center gap-2">
@@ -1960,7 +1965,7 @@ export default function Page() {
                                   </div>
                                 ))}
                                 {characterList.length > 4 && (
-                                  <div className="w-8 h-8 bg-[#2A2B32] border border-[#151619] rounded-full flex items-center justify-center font-mono text-[9px] text-white">
+                                  <div className="w-8 h-8 bg-[#2A2B32] border border-[#151619] rounded-full flex items-center justify-center font-mono text-[9px] text-foreground">
                                     +{characterList.length - 4}
                                   </div>
                                 )}
@@ -2014,14 +2019,14 @@ export default function Page() {
                 initial={{ scale: 0.95, y: 20 }}
                 animate={{ scale: 1, y: 0 }}
                 exit={{ scale: 0.95, y: 20 }}
-                className="w-full max-w-[500px] bg-[#0c0e12]/95 border border-white/10 shadow-[0_40px_100px_rgba(0,0,0,0.8)] p-8 font-sans text-[#e0e0e0] rounded-[2.5rem] relative overflow-hidden"
+                className="w-full max-w-[500px] bg-[#0c0e12]/95 border border-white/10 shadow-[0_40px_100px_rgba(0,0,0,0.8)] p-8 font-sans text-foreground rounded-[2.5rem] relative overflow-hidden"
               >
-                <div className="absolute top-0 right-0 w-80 h-80 bg-indigo-600/[0.03] rounded-full blur-[100px] pointer-events-none"></div>
+                <div className="absolute top-0 right-0 w-80 h-80 bg-primary/[0.03] rounded-full blur-[100px] pointer-events-none"></div>
 
                 <div className="flex justify-between items-center mb-8 relative">
                   <div className="flex items-center gap-4">
-                    <div className="w-2.5 h-2.5 bg-indigo-500 rounded-full shadow-[0_0_15px_rgba(99,102,241,0.6)]"></div>
-                    <h2 className="font-display text-[13px] font-medium uppercase tracking-[0.4em] text-white/90">
+                    <div className="w-2.5 h-2.5 bg-primary rounded-full shadow-[0_0_15px_rgba(99,102,241,0.6)]"></div>
+                    <h2 className="font-display text-[13px] font-medium uppercase tracking-[0.4em] text-foreground/90">
                       {recruitForm ? "Employee Data" : "Select Candidate"}
                     </h2>
                   </div>
@@ -2030,7 +2035,7 @@ export default function Page() {
                       setShowHireMenu(false);
                       setRecruitForm(null);
                     }}
-                    className="w-10 h-10 flex items-center justify-center text-white/20 hover:text-white hover:bg-white/5 rounded-full transition-all"
+                    className="w-10 h-10 flex items-center justify-center text-foreground/20 hover:text-foreground hover:bg-white/5 rounded-full transition-all"
                   >
                     <X size={20} />
                   </button>
@@ -2053,9 +2058,9 @@ export default function Page() {
                             key={idx}
                             whileHover={{ y: -4 }}
                             onClick={() => startRecruit(idx, names[idx])}
-                            className="bg-[#090b0f] border border-white/5 hover:border-indigo-500/30 p-5 rounded-3xl transition-all flex flex-col items-center gap-4 group shadow-sm"
+                            className="bg-surface border border-white/5 hover:border-indigo-500/30 p-5 rounded-3xl transition-all flex flex-col items-center gap-4 group shadow-sm"
                           >
-                            <div className="w-20 h-20 bg-black/40 border border-white/5 rounded-2xl overflow-hidden shrink-0 flex items-center justify-center shadow-inner group-hover:bg-indigo-500/10 transition-colors">
+                            <div className="w-20 h-20 bg-black/40 border border-white/5 rounded-2xl overflow-hidden shrink-0 flex items-center justify-center shadow-inner group-hover:bg-primary/10 transition-colors">
                               <div
                                 className="w-12 h-16 relative top-1 transition-transform duration-500 group-hover:scale-110"
                                 style={{
@@ -2067,21 +2072,21 @@ export default function Page() {
                                 }}
                               />
                             </div>
-                            <span className="text-[11px] font-medium text-slate-400 group-hover:text-indigo-400 transition-colors">
+                            <span className="text-[11px] font-medium text-foreground-muted group-hover:text-primary transition-colors">
                               {names[idx]}
                             </span>
                           </motion.button>
                         );
                       })}
                     </div>
-                    <div className="text-[11px] text-slate-500 font-sans font-medium text-center p-4 bg-[#090b0f] rounded-2xl border border-white/5 shadow-inner">
+                    <div className="text-[11px] text-foreground-muted/70 font-sans font-medium text-center p-4 bg-surface rounded-2xl border border-white/5 shadow-inner">
                       Select a candidate to onboard into the workspace.
                     </div>
                   </div>
                 ) : (
                   <div className="flex flex-col gap-5 font-sans text-[12px] relative z-10 text-slate-200">
                     <div className="flex items-center gap-6 mb-2">
-                      <div className="w-24 h-24 bg-[#090b0f] border border-white/5 rounded-3xl overflow-hidden shrink-0 flex items-center justify-center shadow-inner">
+                      <div className="w-24 h-24 bg-surface border border-white/5 rounded-3xl overflow-hidden shrink-0 flex items-center justify-center shadow-inner">
                         <div
                           className="w-14 h-20 relative top-1"
                           style={{
@@ -2094,7 +2099,7 @@ export default function Page() {
                         />
                       </div>
                       <div className="flex-1">
-                        <label className="block text-slate-400 mb-2 text-[10px] uppercase tracking-wide font-semibold">
+                        <label className="block text-foreground-muted mb-2 text-[10px] uppercase tracking-wide font-semibold">
                           Name
                         </label>
                         <input
@@ -2106,13 +2111,13 @@ export default function Page() {
                               name: e.target.value,
                             })
                           }
-                          className="w-full bg-[#090b0f] border border-white/10 rounded-2xl px-5 py-3 text-slate-200 text-sm focus:border-indigo-500/50 outline-none transition-all shadow-inner"
+                          className="w-full bg-surface border border-white/10 rounded-2xl px-5 py-3 text-slate-200 text-sm focus:border-indigo-500/50 outline-none transition-all shadow-inner"
                         />
                       </div>
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                       <div>
-                        <label className="block text-slate-400 mb-2 text-[10px] uppercase tracking-wide font-semibold">
+                        <label className="block text-foreground-muted mb-2 text-[10px] uppercase tracking-wide font-semibold">
                           Profession
                         </label>
                         <input
@@ -2124,11 +2129,11 @@ export default function Page() {
                               profession: e.target.value,
                             })
                           }
-                          className="w-full bg-[#090b0f] border border-white/10 rounded-xl px-4 py-2.5 focus:border-indigo-500/50 outline-none transition-all shadow-inner"
+                          className="w-full bg-surface border border-white/10 rounded-xl px-4 py-2.5 focus:border-indigo-500/50 outline-none transition-all shadow-inner"
                         />
                       </div>
                       <div>
-                        <label className="block text-slate-400 mb-2 text-[10px] uppercase tracking-wide font-semibold">
+                        <label className="block text-foreground-muted mb-2 text-[10px] uppercase tracking-wide font-semibold">
                           Personality Type
                         </label>
                         <input
@@ -2140,12 +2145,12 @@ export default function Page() {
                               mbti: e.target.value,
                             })
                           }
-                          className="w-full bg-[#090b0f] border border-white/10 rounded-xl px-4 py-2.5 focus:border-indigo-500/50 outline-none transition-all shadow-inner"
+                          className="w-full bg-surface border border-white/10 rounded-xl px-4 py-2.5 focus:border-indigo-500/50 outline-none transition-all shadow-inner"
                         />
                       </div>
                     </div>
                     <div>
-                      <label className="block text-slate-400 mb-2 text-[10px] uppercase tracking-wide font-semibold">
+                      <label className="block text-foreground-muted mb-2 text-[10px] uppercase tracking-wide font-semibold">
                         Work Philosophy
                       </label>
                       <input
@@ -2157,11 +2162,11 @@ export default function Page() {
                             stance: e.target.value,
                           })
                         }
-                        className="w-full bg-[#090b0f] border border-white/10 rounded-xl px-4 py-2.5 focus:border-indigo-500/50 outline-none transition-all shadow-inner"
+                        className="w-full bg-surface border border-white/10 rounded-xl px-4 py-2.5 focus:border-indigo-500/50 outline-none transition-all shadow-inner"
                       />
                     </div>
                     <div>
-                      <label className="block text-slate-400 mb-2 text-[10px] uppercase tracking-wide font-semibold">
+                      <label className="block text-foreground-muted mb-2 text-[10px] uppercase tracking-wide font-semibold">
                         Bio / Notes
                       </label>
                       <textarea
@@ -2172,18 +2177,18 @@ export default function Page() {
                             bio: e.target.value,
                           })
                         }
-                        className="w-full bg-[#090b0f] border border-white/10 rounded-xl px-4 py-3 resize-none h-20 focus:border-indigo-500/50 outline-none transition-all font-sans leading-relaxed shadow-inner"
+                        className="w-full bg-surface border border-white/10 rounded-xl px-4 py-3 resize-none h-20 focus:border-indigo-500/50 outline-none transition-all font-sans leading-relaxed shadow-inner"
                       />
                     </div>
                     <div className="space-y-4 pt-4 border-t border-white/5 mt-2">
-                      <label className="block text-slate-400 text-[10px] uppercase tracking-wide font-semibold">
+                      <label className="block text-foreground-muted text-[10px] uppercase tracking-wide font-semibold">
                         Model Parameters
                       </label>
                       <div className="grid grid-cols-3 gap-4">
                         <div className="space-y-2">
-                          <div className="flex justify-between text-[10px] text-white/40">
+                          <div className="flex justify-between text-[10px] text-foreground/40">
                             <span>Temp</span>
-                            <span className="text-white/80">
+                            <span className="text-foreground/80">
                               {recruitForm.temperature.toFixed(2)}
                             </span>
                           </div>
@@ -2199,13 +2204,13 @@ export default function Page() {
                                 temperature: parseFloat(e.target.value),
                               })
                             }
-                            className="w-full accent-indigo-500 bg-white/5 h-1.5 rounded-lg appearance-none [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:bg-indigo-500 [&::-webkit-slider-thumb]:rounded-full cursor-pointer"
+                            className="w-full accent-indigo-500 bg-white/5 h-1.5 rounded-lg appearance-none [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:bg-primary [&::-webkit-slider-thumb]:rounded-full cursor-pointer"
                           />
                         </div>
                         <div className="space-y-2">
-                          <div className="flex justify-between text-[10px] text-white/40">
+                          <div className="flex justify-between text-[10px] text-foreground/40">
                             <span>Top P</span>
-                            <span className="text-white/80">
+                            <span className="text-foreground/80">
                               {recruitForm.topP.toFixed(2)}
                             </span>
                           </div>
@@ -2221,13 +2226,13 @@ export default function Page() {
                                 topP: parseFloat(e.target.value),
                               })
                             }
-                            className="w-full accent-indigo-500 bg-white/5 h-1.5 rounded-lg appearance-none [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:bg-indigo-500 [&::-webkit-slider-thumb]:rounded-full cursor-pointer"
+                            className="w-full accent-indigo-500 bg-white/5 h-1.5 rounded-lg appearance-none [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:bg-primary [&::-webkit-slider-thumb]:rounded-full cursor-pointer"
                           />
                         </div>
                         <div className="space-y-2">
-                          <div className="flex justify-between text-[10px] text-white/40">
+                          <div className="flex justify-between text-[10px] text-foreground/40">
                             <span>Top K</span>
-                            <span className="text-white/80">
+                            <span className="text-foreground/80">
                               {recruitForm.topK}
                             </span>
                           </div>
@@ -2243,7 +2248,7 @@ export default function Page() {
                                 topK: parseInt(e.target.value),
                               })
                             }
-                            className="w-full accent-indigo-500 bg-white/5 h-1.5 rounded-lg appearance-none [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:bg-indigo-500 [&::-webkit-slider-thumb]:rounded-full cursor-pointer"
+                            className="w-full accent-indigo-500 bg-white/5 h-1.5 rounded-lg appearance-none [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:bg-primary [&::-webkit-slider-thumb]:rounded-full cursor-pointer"
                           />
                         </div>
                       </div>
@@ -2251,13 +2256,13 @@ export default function Page() {
                     <div className="flex gap-4 mt-2">
                       <button
                         onClick={handleHireWorker}
-                        className="flex-1 bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-4 rounded-2xl transition-all uppercase tracking-[0.3em] text-[11px] shadow-lg shadow-indigo-600/20 active:scale-[0.98] hover:shadow-indigo-500/40 border border-white/5 hover:border-white/20"
+                        className="flex-1 bg-primary hover:bg-primary text-foreground font-bold py-4 rounded-2xl transition-all uppercase tracking-[0.3em] text-[11px] shadow-lg shadow-indigo-600/20 active:scale-[0.98] hover:shadow-indigo-500/40 border border-white/5 hover:border-white/20"
                       >
                         Hire Worker
                       </button>
                       <button
                         onClick={() => setRecruitForm(null)}
-                        className="flex-1 bg-white/[0.03] hover:bg-white/[0.06] text-white/60 font-bold py-4 rounded-2xl transition-all uppercase tracking-[0.3em] text-[11px] border border-white/5 active:scale-[0.98]"
+                        className="flex-1 bg-white/[0.03] hover:bg-white/[0.06] text-foreground/60 font-bold py-4 rounded-2xl transition-all uppercase tracking-[0.3em] text-[11px] border border-white/5 active:scale-[0.98]"
                       >
                         Abort
                       </button>
@@ -2283,18 +2288,18 @@ export default function Page() {
                 exit={{ scale: 0.98, opacity: 0 }}
                 className="w-full max-w-[900px] h-[700px] bg-[#0c0e12]/90 border border-white/10 shadow-[0_50px_120px_rgba(0,0,0,0.9)] flex flex-col rounded-[3rem] relative overflow-hidden"
               >
-                <div className="absolute top-0 -left-20 w-96 h-96 bg-indigo-600/[0.02] rounded-full blur-[120px] pointer-events-none"></div>
+                <div className="absolute top-0 -left-20 w-96 h-96 bg-primary/[0.02] rounded-full blur-[120px] pointer-events-none"></div>
 
                 <div className="p-10 pb-6 flex justify-between items-center relative">
                   <div className="flex items-center gap-4">
                     <div className="w-3 h-3 bg-white/20 rounded-full border border-white/40"></div>
-                    <h2 className="font-display text-sm font-medium uppercase tracking-[0.5em] text-white/90">
+                    <h2 className="font-display text-sm font-medium uppercase tracking-[0.5em] text-foreground/90">
                       Filing Cabinet
                     </h2>
                   </div>
                   <button
                     onClick={() => setShowCabinetMenu(false)}
-                    className="w-12 h-12 flex items-center justify-center text-white/20 hover:text-white hover:bg-white/5 rounded-full transition-all"
+                    className="w-12 h-12 flex items-center justify-center text-foreground/20 hover:text-foreground hover:bg-white/5 rounded-full transition-all"
                   >
                     <X size={24} />
                   </button>
@@ -2318,8 +2323,8 @@ export default function Page() {
                       onClick={() => setCabinetTab(tab.id as any)}
                       className={`flex items-center gap-3 px-6 py-3 text-[10px] font-mono font-bold uppercase tracking-[0.3em] transition-all rounded-2xl border ${
                         cabinetTab === tab.id
-                          ? "text-white bg-emerald-600/10 border-emerald-500/30 shadow-inner"
-                          : "text-white/20 hover:text-white/50 border-transparent hover:bg-white/5"
+                          ? "text-foreground bg-emerald-600/10 border-emerald-500/30 shadow-inner"
+                          : "text-foreground/20 hover:text-foreground/50 border-transparent hover:bg-white/5"
                       }`}
                     >
                       {tab.icon}
@@ -2335,25 +2340,25 @@ export default function Page() {
                         {/* Advanced Filters */}
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-white/[0.03] border border-white/10 p-6 rounded-[2rem]">
                           <div className="flex flex-col gap-2">
-                            <span className="text-[10px] font-sans font-medium text-slate-500 ml-4">
+                            <span className="text-[10px] font-sans font-medium text-foreground-muted/70 ml-4">
                               Search Query
                             </span>
                             <div className="relative">
                               <Terminal
                                 size={12}
-                                className="absolute left-5 top-1/2 -translate-y-1/2 text-white/20"
+                                className="absolute left-5 top-1/2 -translate-y-1/2 text-foreground/20"
                               />
                               <input
                                 type="text"
                                 placeholder="Search records..."
                                 value={logSearch}
                                 onChange={(e) => setLogSearch(e.target.value)}
-                                className="w-full bg-[#090b0f] border border-white/5 rounded-xl pl-12 pr-6 py-3.5 text-xs text-slate-300 outline-none focus:border-emerald-500/30 transition-all shadow-inner"
+                                className="w-full bg-surface border border-white/5 rounded-xl pl-12 pr-6 py-3.5 text-xs text-slate-300 outline-none focus:border-emerald-500/30 transition-all shadow-inner"
                               />
                             </div>
                           </div>
                           <div className="flex flex-col gap-2">
-                            <span className="text-[10px] font-sans font-medium text-slate-500 ml-4">
+                            <span className="text-[10px] font-sans font-medium text-foreground-muted/70 ml-4">
                               Staff Member
                             </span>
                             <select
@@ -2361,7 +2366,7 @@ export default function Page() {
                               onChange={(e) =>
                                 setLogAgentFilter(e.target.value)
                               }
-                              className="w-full bg-[#090b0f] border border-white/5 rounded-xl px-6 py-3.5 text-xs text-slate-300 outline-none focus:border-emerald-500/30 transition-all appearance-none shadow-inner"
+                              className="w-full bg-surface border border-white/5 rounded-xl px-6 py-3.5 text-xs text-slate-300 outline-none focus:border-emerald-500/30 transition-all appearance-none shadow-inner"
                             >
                               <option value="all">Entire Office</option>
                               {characterList.map((c) => (
@@ -2372,7 +2377,7 @@ export default function Page() {
                             </select>
                           </div>
                           <div className="flex flex-col gap-2">
-                            <span className="text-[10px] font-sans font-medium text-slate-500 ml-4">
+                            <span className="text-[10px] font-sans font-medium text-foreground-muted/70 ml-4">
                               Date Range
                             </span>
                             <div className="flex gap-2">
@@ -2385,7 +2390,7 @@ export default function Page() {
                                     start: e.target.value,
                                   })
                                 }
-                                className="flex-1 bg-[#090b0f] border border-white/5 rounded-xl px-4 py-3.5 text-[11px] text-slate-300 outline-none focus:border-emerald-500/30 transition-all shadow-inner"
+                                className="flex-1 bg-surface border border-white/5 rounded-xl px-4 py-3.5 text-[11px] text-slate-300 outline-none focus:border-emerald-500/30 transition-all shadow-inner"
                               />
                               <input
                                 type="date"
@@ -2396,7 +2401,7 @@ export default function Page() {
                                     end: e.target.value,
                                   })
                                 }
-                                className="flex-1 bg-[#090b0f] border border-white/5 rounded-xl px-4 py-3.5 text-[11px] text-slate-300 outline-none focus:border-emerald-500/30 transition-all shadow-inner"
+                                className="flex-1 bg-surface border border-white/5 rounded-xl px-4 py-3.5 text-[11px] text-slate-300 outline-none focus:border-emerald-500/30 transition-all shadow-inner"
                               />
                             </div>
                           </div>
@@ -2475,7 +2480,7 @@ export default function Page() {
                                   className="p-8 glass-card rounded-[2.5rem] group flex gap-8 items-start border border-white/5 transition-all duration-300 hover:border-blue-500/20 hover:bg-white/[0.02]"
                                 >
                                   <div className="flex flex-col items-center gap-3 shrink-0 pt-2">
-                                    <div className="w-12 h-12 bg-black/40 border border-white/5 rounded-2xl flex items-center justify-center text-[10px] font-mono text-white/30 group-hover:text-blue-400 group-hover:border-blue-500/20 transition-all duration-500">
+                                    <div className="w-12 h-12 bg-black/40 border border-white/5 rounded-2xl flex items-center justify-center text-[10px] font-mono text-foreground/30 group-hover:text-primary400 group-hover:border-blue-500/20 transition-all duration-500">
                                       {new Date(
                                         log.timestamp,
                                       ).toLocaleTimeString([], {
@@ -2491,8 +2496,8 @@ export default function Page() {
                                         <span
                                           className={`text-[10px] font-mono font-bold uppercase tracking-[0.3em] px-3 py-1 rounded-full border ${
                                             log.agent
-                                              ? "bg-blue-400/10 border-blue-400/20 text-blue-400"
-                                              : "bg-white/10 border-white/10 text-white/40"
+                                              ? "bg-blue-400/10 border-blue-400/20 text-primary400"
+                                              : "bg-white/10 border-white/10 text-foreground/40"
                                           }`}
                                         >
                                           {log.agent || "SYSTEM_CORE"}
@@ -2501,10 +2506,10 @@ export default function Page() {
                                         <div className="flex items-center gap-2">
                                           <Activity
                                             size={10}
-                                            className="text-white/10"
+                                            className="text-foreground/10"
                                           />
                                           <span
-                                            className="text-[10px] font-mono text-white/10 uppercase tracking-widest"
+                                            className="text-[10px] font-mono text-foreground/10 uppercase tracking-widest"
                                             suppressHydrationWarning
                                           >
                                             {new Date(
@@ -2513,13 +2518,13 @@ export default function Page() {
                                           </span>
                                         </div>
                                       </div>
-                                      <div className="text-[8px] font-mono text-white/5 uppercase tracking-[0.4em]">
+                                      <div className="text-[8px] font-mono text-foreground/5 uppercase tracking-[0.4em]">
                                         Secure_Packet_{i + 1024}
                                       </div>
                                     </div>
                                     <div className="relative">
-                                      <p className="font-mono text-[13px] text-white/50 leading-relaxed group-hover:text-white/90 transition-colors uppercase tracking-tight">
-                                        <span className="text-blue-500/40 mr-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                      <p className="font-mono text-[13px] text-foreground/50 leading-relaxed group-hover:text-foreground/90 transition-colors uppercase tracking-tight">
+                                        <span className="text-primary500/40 mr-2 opacity-0 group-hover:opacity-100 transition-opacity">
                                           ►
                                         </span>
                                         {log.message}
@@ -2529,9 +2534,9 @@ export default function Page() {
                                       <div className="bg-blue-500/5 border border-blue-500/10 rounded-xl px-4 py-2 flex items-center gap-3">
                                         <Radio
                                           size={12}
-                                          className="text-blue-400 animate-pulse"
+                                          className="text-primary400 animate-pulse"
                                         />
-                                        <span className="text-[10px] font-mono text-blue-400/60 uppercase tracking-widest font-bold">
+                                        <span className="text-[10px] font-mono text-primary400/60 uppercase tracking-widest font-bold">
                                           NetworkWideDistributionActive
                                         </span>
                                       </div>
@@ -2547,25 +2552,25 @@ export default function Page() {
                         {/* File Filters */}
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-white/[0.03] border border-white/10 p-6 rounded-[2rem]">
                           <div className="flex flex-col gap-2">
-                            <span className="text-[8px] font-mono uppercase tracking-[0.3em] text-white/20 font-bold ml-4">
+                            <span className="text-[8px] font-mono uppercase tracking-[0.3em] text-foreground/20 font-bold ml-4">
                               Vault_Search
                             </span>
                             <div className="relative">
                               <Database
                                 size={12}
-                                className="absolute left-5 top-1/2 -translate-y-1/2 text-white/20"
+                                className="absolute left-5 top-1/2 -translate-y-1/2 text-foreground/20"
                               />
                               <input
                                 type="text"
                                 placeholder="Lookup assets..."
                                 value={fileSearch}
                                 onChange={(e) => setFileSearch(e.target.value)}
-                                className="w-full bg-black/40 border border-white/5 rounded-2xl pl-12 pr-6 py-3.5 text-xs text-white outline-none focus:border-blue-500/30 transition-all font-mono"
+                                className="w-full bg-black/40 border border-white/5 rounded-2xl pl-12 pr-6 py-3.5 text-xs text-foreground outline-none focus:border-blue-500/30 transition-all font-mono"
                               />
                             </div>
                           </div>
                           <div className="flex flex-col gap-2">
-                            <span className="text-[8px] font-mono uppercase tracking-[0.3em] text-white/20 font-bold ml-4">
+                            <span className="text-[8px] font-mono uppercase tracking-[0.3em] text-foreground/20 font-bold ml-4">
                               Author_Protocol
                             </span>
                             <select
@@ -2573,7 +2578,7 @@ export default function Page() {
                               onChange={(e) =>
                                 setFileAuthorFilter(e.target.value)
                               }
-                              className="w-full bg-black/40 border border-white/5 rounded-2xl px-6 py-3.5 text-xs text-white outline-none focus:border-blue-500/30 transition-all font-mono appearance-none"
+                              className="w-full bg-black/40 border border-white/5 rounded-2xl px-6 py-3.5 text-xs text-foreground outline-none focus:border-blue-500/30 transition-all font-mono appearance-none"
                             >
                               <option value="all">ALL_AUTHORS</option>
                               <option value="User">USER_CORE</option>
@@ -2629,12 +2634,12 @@ export default function Page() {
                                   key={i}
                                   className="p-6 glass-card rounded-[2rem] group relative overflow-hidden"
                                 >
-                                  <div className="text-[10px] font-mono uppercase font-bold text-blue-400 mb-4 border-b border-white/10 pb-4 flex items-center justify-between text-glow">
+                                  <div className="text-[10px] font-mono uppercase font-bold text-primary400 mb-4 border-b border-white/10 pb-4 flex items-center justify-between text-glow">
                                     <div className="flex items-center gap-2">
                                       <div className="w-1.5 h-1.5 bg-blue-500 rounded-full glow-blue"></div>
                                       <span>{f.name}</span>
                                     </div>
-                                    <span className="text-white/10 font-normal">
+                                    <span className="text-foreground/10 font-normal">
                                       S_AUTH/{f.author}
                                     </span>
                                   </div>
@@ -2648,7 +2653,7 @@ export default function Page() {
                                       />
                                     </div>
                                   ) : (
-                                    <div className="text-white/40 break-all bg-black/50 p-5 rounded-2xl border border-white/5 font-mono text-[11px] leading-relaxed group-hover:text-white/60 transition-colors h-48 overflow-y-auto scrollbar-thin">
+                                    <div className="text-foreground/40 break-all bg-black/50 p-5 rounded-2xl border border-white/5 font-mono text-[11px] leading-relaxed group-hover:text-foreground/60 transition-colors h-48 overflow-y-auto scrollbar-thin">
                                       {f.data}
                                     </div>
                                   )}

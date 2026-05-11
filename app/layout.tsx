@@ -24,8 +24,10 @@ export const metadata: Metadata = {
 
 export default function RootLayout({children}: {children: React.ReactNode}) {
   return (
-    <html lang="en" className={`${inter.variable} ${jetbrainsMono.variable} ${spaceGrotesk.variable}`}>
-      <body suppressHydrationWarning className="font-sans bg-[#050505] text-white/90 selection:bg-blue-500/30">{children}</body>
+    <html lang="en" className={`${inter.variable} ${jetbrainsMono.variable} ${spaceGrotesk.variable} bg-background`}>
+      <body suppressHydrationWarning className="font-sans text-foreground bg-background antialiased overflow-hidden selection:bg-primary/40 selection:text-foreground">
+        {children}
+      </body>
     </html>
   );
 }
