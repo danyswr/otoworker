@@ -40,11 +40,15 @@ export function OfficeCanvas({ gameStateData, onSelectAgent, onCabinetClick }: O
   useEffect(() => {
     if (!canvasRef.current || !containerRef.current) return;
 
-    const canvas = canvasRef.current;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
+    try {
+      const canvas = canvasRef.current;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) {
+        console.error("[v0] Canvas context not available");
+        return;
+      }
 
-    const renderer = new Renderer(ctx, canvas.width, canvas.height);
+      const renderer = new Renderer(ctx, canvas.width, canvas.height);
     // Initial camera position centered loosely around map
     const mapW = gameStateData.grid[0].length * TILE_SIZE;
     const mapH = gameStateData.grid.length * TILE_SIZE;
@@ -132,8 +136,32 @@ export function OfficeCanvas({ gameStateData, onSelectAgent, onCabinetClick }: O
       // Draw Floor/Grid
       if (SpriteLoader.officeImage) {
         renderer.drawImage(SpriteLoader.officeImage, 0, 0, SpriteLoader.officeImage.width, SpriteLoader.officeImage.height, 0, 0, mapW, mapH);
+      } else {
+        // Fallback: Draw a simple floor grid pattern with colored floor tiles
+        renderer.ctx.fillStyle = "#8b6f47";
+        renderer.ctx.fillRect(0, 0, mapW, mapH);
+        
+        // Draw grid lines
+        renderer.ctx.strokeStyle = "rgba(255, 255, 255, 0.05)";
+        renderer.ctx.lineWidth = 0.5;
+        for (let x = 0; x <= cols; x++) {
+          renderer.ctx.beginPath();
+          renderer.ctx.moveTo(x * TILE_SIZE, 0);
+          renderer.ctx.lineTo(x * TILE_SIZE, mapH);
+          renderer.ctx.stroke();
+        }
+        for (let y = 0; y <= rows; y++) {
+          renderer.ctx.beginPath();
+          renderer.ctx.moveTo(0, y * TILE_SIZE);
+          renderer.ctx.lineTo(mapW, y * TILE_SIZE);
+          renderer.ctx.stroke();
+        }
       }
 
+      // Draw walls on top of floor
+      const scaleX = 1;
+      const scaleY = 1;
+      
       // Collect renderables for z-depth sorting
       const renderables: { y: number; draw: () => void }[] = [];
 
@@ -300,9 +328,12 @@ export function OfficeCanvas({ gameStateData, onSelectAgent, onCabinetClick }: O
     loop.start();
     engineRef.current = { loop, renderer };
 
-    return () => {
-      loop.stop();
-    };
+      return () => {
+        loop.stop();
+      };
+    } catch (error) {
+      console.error("[v0] Canvas setup error:", error);
+    }
   }, [gameStateData]);
 
   // Handle Resize
@@ -512,7 +543,14 @@ export function OfficeCanvas({ gameStateData, onSelectAgent, onCabinetClick }: O
       onWheel={handleWheel}
       style={{ touchAction: 'none' }}
     >
-      <div className="absolute inset-0 pointer-events-none" style={{ backgroundImage: "radial-gradient(circle at 1px 1px, rgba(99,102,241,0.04) 1px, transparent 0)", backgroundSize: "32px 32px" }}></div>
+      {/* Grid Background */}
+      <div className="absolute inset-0 pointer-events-none opacity-30" style={{ backgroundImage: "linear-gradient(0deg, rgba(99,102,241,0.08) 1px, transparent 1px), linear-gradient(90deg, rgba(99,102,241,0.08) 1px, transparent 1px)", backgroundSize: "32px 32px" }}></div>
+      
+      {/* Glow Overlays */}
+      <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-primary/5 rounded-full blur-3xl pointer-events-none opacity-40"></div>
+      <div className="absolute bottom-1/3 right-1/4 w-80 h-80 bg-secondary/5 rounded-full blur-3xl pointer-events-none opacity-30"></div>
+      
+      {/* Canvas */}
       <canvas ref={canvasRef} className="block w-full h-full relative z-10" />
     </div>
   );
