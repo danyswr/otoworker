@@ -1,8 +1,5 @@
 {
-  "/_not-found/page": "app/_not-found/page.js",
-  "/api/chat/route": "app/api/chat/route.js",
-  "/api/exec/route": "app/api/exec/route.js",
   "/api/telegram/updates/route": "app/api/telegram/updates/route.js",
-  "/api/telegram/send/route": "app/api/telegram/send/route.js",
+  "/_not-found/page": "app/_not-found/page.js",
   "/page": "app/page.js"
 }

@@ -19,6 +19,8 @@ import {
   Target,
   AlertTriangle,
   Terminal,
+  MessageCircle,
+  MoreVertical,
 } from "lucide-react";
 
 interface Message {
@@ -305,31 +307,32 @@ export function ChatSidebar({
                     </div>
                   </div>
 
-                  {/* Premium Tabs */}
-                  <div className="flex gap-2.5">
-                    {tabs.map((tab) => {
-                      const isActive = activeTab === tab.id;
-                      return (
-                        <motion.button
-                          key={tab.id}
-                          onClick={() => setActiveTab(tab.id as any)}
-                          whileHover={{ y: -1 }}
-                          whileTap={{ scale: 0.98 }}
-                          className={`flex-1 py-2.5 rounded-xl flex items-center justify-center gap-2 transition-all duration-300 border tab-pill ${
-                            isActive
-                              ? "tab-pill-active bg-gradient-to-br from-primary/15 to-primary/5 text-primary shadow-[0_0_20px_rgba(99,102,241,0.15)]"
-                              : "bg-white/[0.03] border-white/[0.06] text-foreground-muted/70 hover:text-foreground-muted hover:bg-white/[0.05] hover:border-white/[0.1]"
-                          }`}
-                        >
-                          <div className={`transition-colors ${isActive ? "text-primary drop-shadow-md" : "text-foreground-muted/60"}`}>
-                            {tab.icon}
-                          </div>
-                          <span className={`text-[11px] font-semibold tracking-wide transition-colors ${isActive ? "text-primary" : ""}`}>
-                            {tab.label}
-                          </span>
-                        </motion.button>
-                      );
-                    })}
+                  {/* Communication Options */}
+                  <div className="flex gap-3 w-full">
+                    {/* Direct Message Button */}
+                    <motion.button
+                      onClick={() => setActiveTab("chat")}
+                      whileHover={{ y: -2, scale: 1.02 }}
+                      whileTap={{ scale: 0.96 }}
+                      className={`flex-1 py-3 px-4 rounded-xl flex items-center justify-center gap-2.5 transition-all duration-300 border font-semibold text-[12px] tracking-wide uppercase ${
+                        activeTab === "chat"
+                          ? "tab-pill-active bg-gradient-to-br from-primary/20 to-secondary/10 text-primary border-primary/40 shadow-[0_0_24px_rgba(99,102,241,0.2)]"
+                          : "bg-white/[0.03] border-white/[0.08] text-foreground-muted/70 hover:text-foreground hover:bg-white/[0.06] hover:border-primary/20"
+                      }`}
+                    >
+                      <MessageCircle size={16} strokeWidth={2} />
+                      <span>Chat</span>
+                    </motion.button>
+
+                    {/* Quick Actions Dropdown */}
+                    <motion.button
+                      whileHover={{ y: -2 }}
+                      whileTap={{ scale: 0.96 }}
+                      className="py-3 px-3 rounded-xl flex items-center justify-center border border-white/[0.08] bg-white/[0.03] hover:bg-white/[0.06] hover:border-primary/20 text-foreground-muted/70 hover:text-foreground transition-all duration-300"
+                      title="More options"
+                    >
+                      <MoreVertical size={16} strokeWidth={2} />
+                    </motion.button>
                   </div>
                 </div>
 
