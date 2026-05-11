@@ -1,4 +1,4 @@
-// File: /home/danyswr/tools/bugbounty/otoworker/app/api/telegram/updates/route.ts
+// File: /vercel/share/v0-project/app/api/telegram/updates/route.ts
 import * as entry from '../../../../../../app/api/telegram/updates/route.js'
 import type { NextRequest } from 'next/server.js'
 

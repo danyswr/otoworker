@@ -172,17 +172,18 @@ export function ChatSidebar({
   ] as const;
 
   const sidebarVariants = {
-    hidden: { x: 400, opacity: 0 },
+    hidden: { x: 420, opacity: 0 },
     visible: {
       x: 0,
       opacity: 1,
       transition: {
         type: "spring",
-        stiffness: 300,
-        damping: 30,
+        stiffness: 280,
+        damping: 28,
+        mass: 1.1,
       },
     },
-    exit: { x: 400, opacity: 0 },
+    exit: { x: 420, opacity: 0, transition: { duration: 0.25 } },
   };
 
   return (
@@ -191,26 +192,26 @@ export function ChatSidebar({
         {isMinimized && agent && (
           <motion.button
             key="minimized-toggle"
-            initial={{ x: 100, opacity: 0 }}
+            initial={{ x: 120, opacity: 0 }}
             animate={{ x: 0, opacity: 1 }}
-            exit={{ x: 100, opacity: 0 }}
+            exit={{ x: 120, opacity: 0 }}
             onClick={() => setIsMinimized(false)}
-            className="fixed right-0 top-10 z-[100] bg-[#09090b]/90 border border-slate-800 border-r-0 rounded-l-xl p-3 pl-4 text-slate-300 hover:text-white backdrop-blur-xl shadow-2xl transition-colors group flex items-center gap-4 cursor-pointer"
+            className="fixed right-4 top-12 z-[100] glass-panel rounded-2xl p-3 pl-5 text-foreground-muted hover:text-foreground backdrop-blur-xl shadow-2xl transition-all duration-300 group flex items-center gap-3.5 cursor-pointer hover:bg-surface-elevated/40 border-primary/10 hover:border-primary/25"
           >
             <ChevronLeft
-              size={14}
-              className="group-hover:-translate-x-1 transition-transform text-slate-600"
+              size={15}
+              className="group-hover:-translate-x-1.5 transition-transform text-primary/60 group-hover:text-primary/100"
             />
-            <div className="flex items-center gap-2.5 border-l border-white/[0.06] pl-2.5">
+            <div className="flex items-center gap-3 border-l border-white/[0.08] pl-3">
               <div className="flex flex-col items-end">
-                <span className="text-[9px] font-mono uppercase tracking-widest text-slate-600">
+                <span className="text-[8px] font-mono uppercase tracking-wider text-primary/50 leading-tight">
                   Active
                 </span>
-                <span className="text-[11px] font-semibold font-sans text-white/90">
+                <span className="text-[12px] font-semibold font-display text-foreground leading-tight">
                   {agent.name}
                 </span>
               </div>
-              <div className="w-8 h-8 bg-[#0a0c10] border border-white/[0.06] rounded-xl overflow-hidden relative flex items-center justify-center">
+              <div className="w-8 h-8 bg-surface rounded-xl overflow-hidden relative flex items-center justify-center border border-white/[0.08] shadow-lg">
                 <div
                   className="w-6 h-8 scale-[1.5]"
                   style={{
@@ -222,7 +223,7 @@ export function ChatSidebar({
                   }}
                 />
                 <div
-                  className={`absolute bottom-0 right-0 w-2 h-2 rounded-full border border-[#0a0c10] ${agent?.state === CharacterState.WORK ? "bg-emerald-400 status-pulse" : agent?.state === CharacterState.IDLE ? "bg-slate-500" : "bg-indigo-400"}`}
+                  className={`absolute bottom-0.5 right-0.5 w-2 h-2 rounded-full border border-surface shadow-md ${agent?.state === CharacterState.WORK ? "bg-success status-pulse" : agent?.state === CharacterState.IDLE ? "bg-foreground-muted/60" : "bg-primary"}`}
                 ></div>
               </div>
             </div>
@@ -238,18 +239,18 @@ export function ChatSidebar({
             animate="visible"
             exit="exit"
             variants={sidebarVariants}
-            className="fixed right-4 top-4 bottom-4 w-[400px] bg-[#0a0c10]/90 backdrop-blur-[60px] flex flex-col font-sans text-white z-[100] shadow-[0_20px_80px_rgba(0,0,0,0.6)] rounded-[28px] overflow-hidden border border-white/[0.06] gradient-border"
+            className="fixed right-4 top-4 bottom-4 w-[420px] md:w-[420px] lg:w-[440px] glass-panel flex flex-col font-sans text-foreground z-[100] rounded-3xl overflow-hidden gradient-border max-h-screen shadow-2xl"
           >
             <div className="flex flex-col h-full overflow-hidden bg-transparent">
               <>
                 {/* Profile Header */}
-                <div className="px-5 pt-5 pb-3 relative shrink-0 flex flex-col gap-5">
+                <div className="px-6 pt-6 pb-4 relative shrink-0 flex flex-col gap-5 border-b border-white/[0.05]">
                   <div className="flex justify-between items-start relative z-10">
-                    <div className="flex gap-3.5">
+                    <div className="flex gap-4">
                       <div className="relative group shrink-0">
-                        <div className="w-12 h-12 bg-gradient-to-b from-white/[0.08] to-transparent border border-white/[0.1] rounded-full overflow-hidden relative flex items-center justify-center z-10 shadow-lg backdrop-blur-md">
+                        <div className="w-14 h-14 bg-gradient-to-br from-primary/20 via-surface-elevated to-surface border border-primary/20 rounded-2xl overflow-hidden relative flex items-center justify-center z-10 shadow-lg backdrop-blur-md glow-blue">
                           <div
-                            className="w-8 h-10 scale-[1.5] translate-y-1"
+                            className="w-10 h-12 scale-[1.5] translate-y-1"
                             style={{
                               backgroundImage: `url(/char_${agent.spriteIndex}.png)`,
                               backgroundPosition: "16.666% 0%",
@@ -260,71 +261,73 @@ export function ChatSidebar({
                           />
                         </div>
                         <div
-                          className={`absolute bottom-0 right-0 w-3.5 h-3.5 rounded-full border-[2.5px] border-[#0a0c10] z-20 shadow-sm ${agent?.state === CharacterState.WORK ? "bg-emerald-400 status-pulse" : agent?.state === CharacterState.IDLE ? "bg-slate-400" : "bg-indigo-400 status-pulse"}`}
+                          className={`absolute bottom-0 right-0 w-4 h-4 rounded-full border-[2.5px] z-20 shadow-md ${agent?.state === CharacterState.WORK ? "bg-success border-surface status-pulse" : agent?.state === CharacterState.IDLE ? "bg-foreground-muted/70 border-surface" : "bg-primary border-surface status-pulse"}`}
                         ></div>
                       </div>
-                      <div className="flex flex-col justify-center">
-                        <h2 className="text-[16px] font-bold tracking-tight text-white mb-0.5 flex items-center gap-2">
+                      <div className="flex flex-col justify-center flex-1 min-w-0">
+                        <h2 className="text-[17px] font-bold font-display tracking-tight text-foreground mb-1 flex items-center gap-2 flex-wrap">
                           {agent.name}
                           <span
-                            className={`text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-md ${agent?.state === CharacterState.WORK ? "text-emerald-400 bg-emerald-400/10" : "text-slate-400 bg-white/5"}`}
+                            className={`text-[8px] font-bold uppercase tracking-widest px-2 py-1 rounded-lg ${agent?.state === CharacterState.WORK ? "text-success bg-success/10 border border-success/20" : "text-foreground-muted bg-white/[0.04] border border-white/[0.08]"}`}
                           >
                             {agent.state}
                           </span>
                         </h2>
                         <div className="flex items-center gap-1.5">
-                          <span className="text-[12px] text-indigo-300/80 font-medium tracking-wide">
+                          <span className="text-[12px] text-primary/80 font-medium tracking-wide">
                             {agent.profession}
                           </span>
                         </div>
                       </div>
                     </div>
-                    <div className="flex items-center gap-1 bg-white/[0.03] border border-white/[0.05] rounded-[14px] p-1 shadow-inner">
+                    <div className="flex items-center gap-1.5 bg-white/[0.04] border border-white/[0.08] rounded-xl p-1.5 shadow-inner">
                       <button
                         onClick={() => setShowTerminateConfirm(true)}
-                        className="p-1.5 text-slate-500 hover:text-red-400 hover:bg-red-500/10 rounded-[10px] transition-all"
+                        className="p-1.5 text-foreground-muted/70 hover:text-error hover:bg-error/15 rounded-lg transition-all duration-200 hover:glow-blue"
                         title="Terminate"
                       >
-                        <Trash2 size={13} />
+                        <Trash2 size={14} strokeWidth={1.8} />
                       </button>
                       <button
                         onClick={() => setIsMinimized(true)}
-                        className="p-1.5 text-slate-500 hover:text-white hover:bg-white/10 rounded-[10px] transition-all"
+                        className="p-1.5 text-foreground-muted/70 hover:text-foreground hover:bg-primary/10 rounded-lg transition-all duration-200"
                         title="Minimize"
                       >
-                        <ChevronRight size={13} />
+                        <ChevronRight size={14} strokeWidth={1.8} />
                       </button>
                       <button
                         onClick={onClose}
-                        className="p-1.5 text-slate-500 hover:text-white hover:bg-white/10 rounded-[10px] transition-all"
+                        className="p-1.5 text-foreground-muted/70 hover:text-foreground hover:bg-primary/10 rounded-lg transition-all duration-200"
                         title="Close"
                       >
-                        <X size={13} />
+                        <X size={14} strokeWidth={1.8} />
                       </button>
                     </div>
                   </div>
 
-                  {/* Minimalist Tabs */}
-                  <div className="flex gap-2">
+                  {/* Premium Tabs */}
+                  <div className="flex gap-2.5">
                     {tabs.map((tab) => {
                       const isActive = activeTab === tab.id;
                       return (
-                        <button
+                        <motion.button
                           key={tab.id}
                           onClick={() => setActiveTab(tab.id as any)}
-                          className={`flex-1 py-2 rounded-xl flex items-center justify-center gap-2 transition-all duration-300 border ${
+                          whileHover={{ y: -1 }}
+                          whileTap={{ scale: 0.98 }}
+                          className={`flex-1 py-2.5 rounded-xl flex items-center justify-center gap-2 transition-all duration-300 border tab-pill ${
                             isActive
-                              ? "bg-indigo-500/15 border-indigo-500/30 text-indigo-300 shadow-[0_0_15px_rgba(99,102,241,0.1)]"
-                              : "bg-white/[0.01] border-white/[0.04] text-slate-500 hover:text-slate-300 hover:bg-white/[0.03]"
+                              ? "tab-pill-active bg-gradient-to-br from-primary/15 to-primary/5 text-primary shadow-[0_0_20px_rgba(99,102,241,0.15)]"
+                              : "bg-white/[0.03] border-white/[0.06] text-foreground-muted/70 hover:text-foreground-muted hover:bg-white/[0.05] hover:border-white/[0.1]"
                           }`}
                         >
-                          <div className={`${isActive ? "text-indigo-400 drop-shadow-md" : "text-slate-500"}`}>
+                          <div className={`transition-colors ${isActive ? "text-primary drop-shadow-md" : "text-foreground-muted/60"}`}>
                             {tab.icon}
                           </div>
-                          <span className={`text-[11px] ${isActive ? "font-bold tracking-wide" : "font-medium"}`}>
+                          <span className={`text-[11px] font-semibold tracking-wide transition-colors ${isActive ? "text-primary" : ""}`}>
                             {tab.label}
                           </span>
-                        </button>
+                        </motion.button>
                       );
                     })}
                   </div>
@@ -355,7 +358,7 @@ export function ChatSidebar({
                               <h3 className="text-lg font-display text-white uppercase tracking-[0.2em] mb-2 font-bold">
                                 Terminate_Employment
                               </h3>
-                              <p className="text-[11px] font-mono text-white/40 leading-relaxed uppercase tracking-widest">
+                              <p className="text-[11px] font-mono text-foreground-muted/50 leading-relaxed uppercase tracking-widest">
                                 Permanently fire{" "}
                                 <span className="text-red-400 font-bold">
                                   {agent?.name}
@@ -374,7 +377,7 @@ export function ChatSidebar({
                             </button>
                             <button
                               onClick={() => setShowTerminateConfirm(false)}
-                              className="w-full py-4 bg-white/5 hover:bg-white/10 text-white/60 rounded-2xl font-mono text-[10px] uppercase tracking-[0.3em] transition-all border border-white/5"
+                              className="w-full py-4 bg-white/5 hover:bg-white/10 text-foreground-muted/65 rounded-2xl font-mono text-[10px] uppercase tracking-[0.3em] transition-all border border-white/5"
                             >
                               Abort_Command
                             </button>
@@ -416,7 +419,7 @@ export function ChatSidebar({
                                         [field.key]: e.target.value,
                                       })
                                     }
-                                    className="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2.5 text-xs text-white focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/30 outline-none transition-all placeholder:text-slate-600 shadow-inner"
+                                    className="w-full glass-input rounded-lg px-4 py-2.5 text-xs text-foreground focus:border-primary/50 focus:ring-1 focus:ring-primary/30 focus-ring outline-none transition-all placeholder:text-foreground-muted/40 shadow-inner"
                                   />
                                 </div>
                               ))}
@@ -434,7 +437,7 @@ export function ChatSidebar({
                                     bio: e.target.value,
                                   })
                                 }
-                                className="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2.5 text-xs text-white h-24 resize-none focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/50 outline-none transition-all shadow-inner"
+                                className="w-full glass-input rounded-lg px-4 py-2.5 text-xs text-foreground h-24 resize-none focus:border-primary/50 focus:ring-1 focus:ring-primary/30 focus-ring outline-none transition-all placeholder:text-foreground-muted/40 shadow-inner"
                               />
                             </div>
 
@@ -443,7 +446,7 @@ export function ChatSidebar({
                                 AI Parameters
                               </label>
 
-                              <div className="bg-black/40 border border-white/10 rounded-lg p-4 space-y-5">
+                              <div className="bg-surface/40 border border-white/10 rounded-lg p-4 space-y-5">
                                 <div className="space-y-2">
                                   <div className="flex justify-between text-[10px] text-slate-400">
                                     <span>Creativity (Temp)</span>
@@ -533,7 +536,7 @@ export function ChatSidebar({
                             <div className="flex justify-end -mb-4 relative z-10">
                               <button
                                 onClick={() => setIsEditingProfile(true)}
-                                className="text-[10px] font-medium text-blue-400 hover:text-white px-3 py-1.5 bg-black/40 rounded-lg border border-white/10 transition-colors shadow-sm"
+                                className="text-[10px] font-medium text-blue-400 hover:text-white px-3 py-1.5 bg-surface/40 rounded-lg border border-white/10 transition-colors shadow-sm"
                               >
                                 Edit Profile
                               </button>
@@ -568,7 +571,7 @@ export function ChatSidebar({
                               ].map((item, i) => (
                                 <div
                                   key={i}
-                                  className={`bg-[#060810]/80 p-4 flex flex-col gap-1.5 ${item.label === "AI_Model" ? "col-span-2" : ""}`}
+                                  className={`bg-surface/80 p-4 flex flex-col gap-1.5 ${item.label === "AI_Model" ? "col-span-2" : ""}`}
                                 >
                                   <span className="text-[9px] font-mono text-white/30 uppercase tracking-widest">
                                     {item.label}
@@ -583,7 +586,7 @@ export function ChatSidebar({
                             {/* Profile Bio */}
                             <div className="bg-white/[0.015] border border-white/[0.04] rounded-2xl p-4 relative group">
                               <div className="absolute inset-0 bg-indigo-500/[0.03] opacity-0 group-hover:opacity-100 transition-opacity rounded-2xl pointer-events-none"></div>
-                              <p className="text-[11px] text-white/50 leading-relaxed font-sans italic relative z-10">
+                              <p className="text-[11px] text-foreground-muted/60 leading-relaxed font-sans italic relative z-10">
                                 {agent.bio ||
                                   "Encrypted dossier. No background signal detected."}
                               </p>
@@ -616,7 +619,7 @@ export function ChatSidebar({
                                 ].map((stat, i) => (
                                   <div key={i} className="space-y-1.5">
                                     <div className="flex justify-between items-end text-[9px] font-mono tracking-widest">
-                                      <span className="text-white/40 uppercase">
+                                      <span className="text-foreground-muted/50 uppercase">
                                         {stat.label}
                                       </span>
                                       <span className="text-white/90 font-bold">
@@ -807,7 +810,7 @@ export function ChatSidebar({
                                     </span>
                                   </div>
                                   <div className="flex items-center gap-2">
-                                    <span className="text-[9px] font-mono text-white/50 bg-black/40 px-1.5 py-0.5 rounded">
+                                    <span className="text-[9px] font-mono text-foreground-muted/60 bg-surface/40 px-1.5 py-0.5 rounded">
                                       {(agent.memory || []).length} TRACES
                                     </span>
                                     {agent.memory &&
@@ -850,14 +853,14 @@ export function ChatSidebar({
                                     onChange={(e) =>
                                       setMemorySearch(e.target.value)
                                     }
-                                    className="flex-1 bg-black/40 border border-white/10 rounded px-2 py-1.5 text-[10px] text-white focus:outline-none focus:border-emerald-500/50 placeholder:text-white/20"
+                                    className="flex-1 bg-surface/40 border border-white/10 rounded px-2 py-1.5 text-[10px] text-white focus:outline-none focus:border-emerald-500/50 placeholder:text-white/20"
                                   />
                                   <select
                                     value={memoryFilter}
                                     onChange={(e) =>
                                       setMemoryFilter(e.target.value as any)
                                     }
-                                    className="bg-black/40 border border-white/10 rounded px-2 py-1.5 text-[10px] text-white focus:outline-none focus:border-emerald-500/50 [&>option]:bg-[#09090b] outline-none"
+                                    className="bg-surface/40 border border-white/10 rounded px-2 py-1.5 text-[10px] text-white focus:outline-none focus:border-emerald-500/50 [&>option]:bg-[#09090b] outline-none"
                                   >
                                     <option value="all">All Types</option>
                                     <option value="interaction">
@@ -1125,7 +1128,7 @@ export function ChatSidebar({
                               className="bg-blue-500/5 border border-blue-500/20 rounded-xl p-4 gap-3 flex flex-col mb-4"
                             >
                               <div className="flex flex-col gap-1.5">
-                                <label className="text-[10px] text-white/50 uppercase tracking-widest font-semibold flex justify-between">
+                                <label className="text-[10px] text-foreground-muted/60 uppercase tracking-widest font-semibold flex justify-between">
                                   <span>Target Node</span>
                                 </label>
                                 <select
@@ -1165,7 +1168,7 @@ export function ChatSidebar({
                               {networkTargetName && (
                                 <div className="flex flex-col gap-3">
                                   <div className="flex flex-col gap-1.5">
-                                    <label className="text-[10px] text-white/50 uppercase tracking-widest font-semibold flex justify-between">
+                                    <label className="text-[10px] text-foreground-muted/60 uppercase tracking-widest font-semibold flex justify-between">
                                       <span>Affinity: {networkAffinity}%</span>
                                     </label>
                                     <input
@@ -1182,7 +1185,7 @@ export function ChatSidebar({
                                     />
                                   </div>
                                   <div className="flex flex-col gap-1.5">
-                                    <label className="text-[10px] text-white/50 uppercase tracking-widest font-semibold flex justify-between">
+                                    <label className="text-[10px] text-foreground-muted/60 uppercase tracking-widest font-semibold flex justify-between">
                                       <span>Interaction Notes</span>
                                     </label>
                                     <textarea
@@ -1220,11 +1223,11 @@ export function ChatSidebar({
                                       hidden: { opacity: 0, y: 10 },
                                       visible: { opacity: 1, y: 0 },
                                     }}
-                                    className="flex flex-col gap-2.5 bg-black/40 border border-white/5 rounded-xl p-4 shadow-sm"
+                                    className="flex flex-col gap-2.5 bg-surface/40 border border-white/5 rounded-xl p-4 shadow-sm"
                                   >
                                     <div className="flex justify-between items-center">
                                       <div className="flex items-center gap-2.5">
-                                        <div className="w-8 h-8 rounded-lg bg-black border border-white/10 flex items-center justify-center font-display text-sm text-white/50 shadow-inner">
+                                        <div className="w-8 h-8 rounded-lg bg-black border border-white/10 flex items-center justify-center font-display text-sm text-foreground-muted/60 shadow-inner">
                                           {name.charAt(0)}
                                         </div>
                                         <div className="flex flex-col">
@@ -1323,7 +1326,7 @@ export function ChatSidebar({
                                         hidden: { opacity: 0, y: 10 },
                                         visible: { opacity: 1, y: 0 },
                                       }}
-                                      className="text-[11px] text-white/80 bg-black/40 p-4 rounded-xl border border-white/5 relative group hover:border-blue-500/30 transition-colors shadow-sm"
+                                      className="text-[11px] text-white/80 bg-surface/40 p-4 rounded-xl border border-white/5 relative group hover:border-blue-500/30 transition-colors shadow-sm"
                                     >
                                       <div className="absolute left-0 top-3 bottom-3 w-1 bg-blue-500/20 group-hover:bg-blue-500 transition-colors rounded-r-sm"></div>
                                       <div className="text-[9px] text-slate-500 font-medium mb-1.5 flex justify-between items-center capitalize">

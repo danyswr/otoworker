@@ -504,7 +504,7 @@ export function OfficeCanvas({ gameStateData, onSelectAgent, onCabinetClick }: O
   return (
     <div 
       ref={containerRef} 
-      className="flex-1 relative bg-[#08080a] flex items-center justify-center overflow-hidden touch-none"
+      className="flex-1 relative bg-gradient-to-br from-background via-surface to-background flex items-center justify-center overflow-hidden touch-none"
       onPointerDown={handlePointerDown}
       onPointerMove={handlePointerMove}
       onPointerUp={handlePointerUp}
@@ -512,7 +512,7 @@ export function OfficeCanvas({ gameStateData, onSelectAgent, onCabinetClick }: O
       onWheel={handleWheel}
       style={{ touchAction: 'none' }}
     >
-      <div className="absolute inset-0 pointer-events-none" style={{ backgroundImage: "radial-gradient(circle at 1px 1px, rgba(255,255,255,0.05) 1px, transparent 0)", backgroundSize: "32px 32px" }}></div>
+      <div className="absolute inset-0 pointer-events-none" style={{ backgroundImage: "radial-gradient(circle at 1px 1px, rgba(99,102,241,0.04) 1px, transparent 0)", backgroundSize: "32px 32px" }}></div>
       <canvas ref={canvasRef} className="block w-full h-full relative z-10" />
     </div>
   );
